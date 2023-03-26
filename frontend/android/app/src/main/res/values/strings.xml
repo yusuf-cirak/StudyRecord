@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Study Record</string>
+    <string name="title_activity_main">Study Record</string>
+    <string name="package_name">com.studyrecord.app</string>
+    <string name="custom_url_scheme">com.studyrecord.app</string>
+</resources>
