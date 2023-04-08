@@ -1,9 +1,9 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.studyrecord.app',
-  appName: 'Study Record',
-  webDir: 'dist',
+  appId: 'study.record',
+  appName: 'study-record',
+  webDir: 'www',
   bundledWebRuntime: false
 };
 

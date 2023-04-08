@@ -1,0 +1,7 @@
+{
+  "name": "study-record",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
