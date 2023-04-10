@@ -1,30 +1,78 @@
-import { NgIf } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
+import { BehaviorSubject, map } from 'rxjs';
 
-type Screen = 'Sign In' | 'Register' | 'Forgot Password';
+enum ScreenType {
+  SignIn = 'Sign In',
+  Register = 'Register',
+}
 
 @Component({
   selector: 'app-auth',
   templateUrl: './auth.page.html',
   styleUrls: ['./auth.page.scss'],
   standalone: true,
-  imports: [IonicModule, NgIf],
+  imports: [IonicModule, NgIf, ReactiveFormsModule, AsyncPipe],
 })
 export class AuthPage {
-  screen: Screen = 'Sign In';
-  isLoading: boolean = false;
-  // constructor(private fb: FormBuilder) {
-  //   this.formData = this.fb.group({
-  //     name: ['', [Validators.required]],
-  //     email: ['', [Validators.required, Validators.email]],
-  //     password: ['', [Validators.required]],
-  //   });
-  // }
+  screenType = ScreenType;
+  form: FormGroup;
+  private _screenSubject = new BehaviorSubject(ScreenType.SignIn);
+  screen$ = this._screenSubject.asObservable();
 
-  changeScreen(screenType: Screen) {
-    this.screen = screenType;
+  constructor(private formBuilder: FormBuilder) {
+    this.form = this.formBuilder.group({
+      firstName: null,
+      lastName: null,
+      userName: [null, { validators: [Validators.required] }],
+      password: [
+        null,
+        { validators: [Validators.minLength(6), Validators.required] },
+      ],
+    });
   }
 
-  handleClick(screenType: Screen) {} //
+  ngOnInit() {
+    const firstNameControl = this.form.get('firstName');
+    const lastNameControl = this.form.get('lastName');
+
+    if (firstNameControl && lastNameControl) {
+      this.requiredIfRegister(firstNameControl);
+      this.requiredIfRegister(lastNameControl);
+    }
+  }
+
+  handleClick(screenType: ScreenType) {
+    this.changeScreen(screenType);
+  }
+
+  changeScreen(screenType: ScreenType) {
+    this.form.reset();
+    this._screenSubject.next(screenType);
+  }
+
+  requiredIfRegister(control: AbstractControl) {
+    console.log('Registered!');
+    return this._screenSubject.pipe(
+      map((screen) => {
+        return screen === ScreenType.Register
+          ? Validators.required(control)
+          : null;
+      })
+    );
+  }
+
+  submitForm(screenType: ScreenType, formValue: any) {
+    console.log(screenType);
+    console.log(formValue);
+    // API Call
+  }
 }
