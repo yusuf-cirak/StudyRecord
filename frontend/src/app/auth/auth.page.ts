@@ -26,7 +26,10 @@ export class AuthPage {
   screenType = ScreenType;
   form: FormGroup;
   private _screenSubject = new BehaviorSubject(ScreenType.SignIn);
-  screen$ = this._screenSubject.asObservable();
+
+  get screen() {
+    return this._screenSubject.getValue();
+  }
 
   constructor(private formBuilder: FormBuilder) {
     this.form = this.formBuilder.group({

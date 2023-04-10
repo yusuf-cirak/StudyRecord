@@ -1,82 +1,80 @@
 <ion-content [fullscreen]="true">
-  <ng-container *ngIf="screen$ | async as screen">
-    <!-- Login Page -->
-    <div class="container">
-      <ng-container *ngIf="screen==='Sign In'">
-        <h1 class="heading">👋 Welcome<br /><br /></h1>
-        <p class="para">Sign in to continue!</p>
-      </ng-container>
+  <!-- Login Page -->
+  <div class="container">
+    <ng-container *ngIf="screen==='Sign In'">
+      <h1 class="heading">👋 Welcome<br /><br /></h1>
+      <p class="para">Sign in to continue!</p>
+    </ng-container>
+
+    <ng-container *ngIf="screen==='Register'">
+      <h1 class="heading">🚀 Create Account<br /><br /></h1>
+      <p class="para">Sign up to get started!</p>
+    </ng-container>
+    <form [formGroup]="form">
+      <div class="input-container">
+        <ng-container *ngIf="screen===screenType.Register">
+          <ion-input
+            label="First Name"
+            label-placement="floating"
+            fill="solid"
+            placeholder="John"
+            formControlName="firstName"
+          ></ion-input>
+
+          <ion-input
+            label="Last Name"
+            label-placement="floating"
+            fill="solid"
+            placeholder="Doe"
+            formControlName="lastName"
+          ></ion-input>
+        </ng-container>
+
+        <ion-input
+          label="User Name"
+          label-placement="floating"
+          fill="solid"
+          placeholder="jhndoe"
+          formControlName="userName"
+        ></ion-input>
+
+        <ion-input
+          label="Password"
+          label-placement="floating"
+          fill="solid"
+          placeholder="******"
+          [minlength]="6"
+          type="password"
+          errorText="Invalid Password"
+          formControlName="password"
+        ></ion-input>
+      </div>
 
       <ng-container *ngIf="screen==='Register'">
-        <h1 class="heading">🚀 Create Account<br /><br /></h1>
-        <p class="para">Sign up to get started!</p>
+        <p class="signup-text">
+          I have an account&nbsp;<a (click)="changeScreen(screenType.SignIn)"
+            >Sign In?</a
+          >
+        </p>
       </ng-container>
-      <form [formGroup]="form">
-        <div class="input-container">
-          <ng-container *ngIf="screen===screenType.Register">
-            <ion-input
-              label="First Name"
-              label-placement="floating"
-              fill="solid"
-              placeholder="John"
-              formControlName="firstName"
-            ></ion-input>
-
-            <ion-input
-              label="Last Name"
-              label-placement="floating"
-              fill="solid"
-              placeholder="Doe"
-              formControlName="lastName"
-            ></ion-input>
-          </ng-container>
-
-          <ion-input
-            label="User Name"
-            label-placement="floating"
-            fill="solid"
-            placeholder="jhndoe"
-            formControlName="userName"
-          ></ion-input>
-
-          <ion-input
-            label="Password"
-            label-placement="floating"
-            fill="solid"
-            placeholder="******"
-            [minlength]="6"
-            type="password"
-            errorText="Invalid Password"
-            formControlName="password"
-          ></ion-input>
-        </div>
-
-        <ng-container *ngIf="screen==='Register'">
-          <p class="signup-text">
-            I have an account&nbsp;<a (click)="changeScreen(screenType.SignIn)"
-              >Sign In?</a
-            >
-          </p>
-        </ng-container>
-        <ng-container *ngIf="screen==='Sign In'">
-          <p class="signup-text">
-            I'm a new user&nbsp;<a (click)="changeScreen(screenType.Register)"
-              >Register?</a
-            >
-          </p>
-        </ng-container>
-        <ion-button
-          class="login-button"
-          (click)="submitForm(screen,form.value)"
-          expand="block"
-          [disabled]="!form.valid"
-          >{{screen}}</ion-button
-        >
-        <!-- <ion-button class="google-button" expand="block" color="light"
+      <ng-container *ngIf="screen==='Sign In'">
+        <p class="signup-text">
+          I'm a new user&nbsp;<a (click)="changeScreen(screenType.Register)"
+            >Register?</a
+          >
+        </p>
+      </ng-container>
+      <ion-button
+        class="login-button"
+        (click)="submitForm(screen,form.value)"
+        expand="block"
+        [disabled]="!form.valid"
+        >{{screen}}</ion-button
+      >
+      <!-- <ion-button class="google-button" expand="block" color="light"
         ><ion-icon name="logo-google"></ion-icon>&nbsp;&nbsp;Google
         Signin</ion-button
       > -->
-      </form>
-    </div>
-  </ng-container>
+    </form>
+  </div>
 </ion-content>
