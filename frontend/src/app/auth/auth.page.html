@@ -12,7 +12,7 @@
     </ng-container>
     <form [formGroup]="form">
       <div class="input-container">
-        <ng-container *ngIf="screen===screenType.Register">
+        <ng-container *ngIf="screen==='Register'">
           <ion-input
             label="First Name"
             label-placement="floating"
@@ -52,14 +52,14 @@
 
       <ng-container *ngIf="screen==='Register'">
         <p class="signup-text">
-          I have an account&nbsp;<a (click)="changeScreen(screenType.SignIn)"
+          I have an account&nbsp;<a (click)="changeScreen('Sign In')"
             >Sign In?</a
           >
         </p>
       </ng-container>
       <ng-container *ngIf="screen==='Sign In'">
         <p class="signup-text">
-          I'm a new user&nbsp;<a (click)="changeScreen(screenType.Register)"
+          I'm a new user&nbsp;<a (click)="changeScreen('Register')"
             >Register?</a
           >
         </p>

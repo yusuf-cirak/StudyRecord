@@ -1,5 +1,5 @@
 import { AsyncPipe, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -8,12 +8,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { BehaviorSubject, map } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 
-enum ScreenType {
-  SignIn = 'Sign In',
-  Register = 'Register',
-}
+type ScreenType = 'Sign In' | 'Register';
 
 @Component({
   selector: 'app-auth',
@@ -23,18 +20,20 @@ enum ScreenType {
   imports: [IonicModule, NgIf, ReactiveFormsModule, AsyncPipe],
 })
 export class AuthPage {
-  screenType = ScreenType;
   form: FormGroup;
-  private _screenSubject = new BehaviorSubject(ScreenType.SignIn);
 
+  // Subject to change form validators reactively
+  private screen$ = new BehaviorSubject<ScreenType>('Sign In');
+  private subscriptions = new Subscription();
   get screen() {
-    return this._screenSubject.getValue();
+    return this.screen$.getValue();
   }
-
   constructor(private formBuilder: FormBuilder) {
+    // Initializing the form. userName and password are always required
+
     this.form = this.formBuilder.group({
-      firstName: null,
-      lastName: null,
+      firstName: [null, Validators.minLength(2)],
+      lastName: [null, Validators.minLength(2)],
       userName: [null, { validators: [Validators.required] }],
       password: [
         null,
@@ -48,9 +47,16 @@ export class AuthPage {
     const lastNameControl = this.form.get('lastName');
 
     if (firstNameControl && lastNameControl) {
-      this.requiredIfRegister(firstNameControl);
-      this.requiredIfRegister(lastNameControl);
+      const firstNameSubscription = this.requiredIfRegister(firstNameControl);
+      const lastNameSubscription = this.requiredIfRegister(lastNameControl);
+
+      this.subscriptions.add(firstNameSubscription);
+      this.subscriptions.add(lastNameSubscription);
     }
+  }
+
+  getControl(controlName: string) {
+    return this.form.controls[controlName];
   }
 
   handleClick(screenType: ScreenType) {
@@ -59,23 +65,27 @@ export class AuthPage {
 
   changeScreen(screenType: ScreenType) {
     this.form.reset();
-    this._screenSubject.next(screenType);
+    this.screen$.next(screenType);
   }
 
   requiredIfRegister(control: AbstractControl) {
-    console.log('Registered!');
-    return this._screenSubject.pipe(
-      map((screen) => {
-        return screen === ScreenType.Register
-          ? Validators.required(control)
-          : null;
-      })
-    );
+    return this.screen$.pipe().subscribe((screen) => {
+      if (screen && screen === 'Register') {
+        control.addValidators(Validators.required);
+      } else {
+        control.removeValidators(Validators.required);
+      }
+      control.updateValueAndValidity();
+    });
   }
 
   submitForm(screenType: ScreenType, formValue: any) {
     console.log(screenType);
     console.log(formValue);
     // API Call
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
   }
 }
