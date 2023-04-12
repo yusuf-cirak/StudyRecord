@@ -1,5 +1,6 @@
+import { AuthService } from './../core/services/auth.service';
 import { AsyncPipe, NgIf } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -9,6 +10,8 @@ import {
 } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { BehaviorSubject, Subscription } from 'rxjs';
+import { HttpClientModule } from '@angular/common/http';
+import { HttpClientService } from '../shared/services/http-client.service';
 
 type ScreenType = 'Sign In' | 'Register';
 
@@ -17,7 +20,8 @@ type ScreenType = 'Sign In' | 'Register';
   templateUrl: './auth.page.html',
   styleUrls: ['./auth.page.scss'],
   standalone: true,
-  imports: [IonicModule, NgIf, ReactiveFormsModule, AsyncPipe],
+  imports: [IonicModule, NgIf, ReactiveFormsModule, HttpClientModule],
+  providers: [HttpClientService, AuthService],
 })
 export class AuthPage {
   form: FormGroup;
@@ -28,7 +32,10 @@ export class AuthPage {
   get screen() {
     return this.screen$.getValue();
   }
-  constructor(private formBuilder: FormBuilder) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService
+  ) {
     // Initializing the form. userName and password are always required
 
     this.form = this.formBuilder.group({
@@ -83,6 +90,27 @@ export class AuthPage {
     console.log(screenType);
     console.log(formValue);
     // API Call
+    if (screenType === 'Register') {
+      const registerSubscription = this.authService
+        .register({
+          first_name: formValue.firstName,
+          last_name: formValue.lastName,
+          user_name: formValue.userName,
+          password: formValue.password,
+        })
+        .subscribe((res) => console.log('API Response: ' + res));
+
+      this.subscriptions.add(registerSubscription);
+    } else {
+      const loginSubscription = this.authService
+        .login({
+          user_name: formValue.userName,
+          password: formValue.password,
+        })
+        .subscribe((res) => console.log(res));
+
+      this.subscriptions.add(loginSubscription);
+    }
   }
 
   ngOnDestroy() {

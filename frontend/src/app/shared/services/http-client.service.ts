@@ -1,20 +1,18 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class HttpClientService {
-  constructor(
-    private httpClient: HttpClient,
-    @Inject('baseUrl') private baseUrl: string
-  ) {}
+  constructor(private httpClient: HttpClient) {}
 
   private url(requestParameter: Partial<RequestParameters>, idParam?: string) {
     // Her istekte url ayarlamamız gerek. O yüzden kod tekrarı yapmamak için fonksiyon yazıyoruz.
     let url: string = '';
     if (requestParameter.fullEndPoint) url = requestParameter.fullEndPoint; //
     else {
-      url = `${requestParameter.baseUrl ?? this.baseUrl}/${
+      url = `${requestParameter.baseUrl ?? environment.baseUrl}/${
         requestParameter.controller
       }`;
       /*
