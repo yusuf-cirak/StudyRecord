@@ -1,34 +1,78 @@
-use std::env;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+mod config;
+mod handler;
+mod jwt_auth;
+mod model;
+mod response;
+
+use actix_cors::Cors;
+use actix_web::middleware::Logger;
+use actix_web::{http::header, web, App, HttpServer};
+use config::Config;
 use dotenv::dotenv;
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
-mod constants;
-
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn get_db_url() -> impl Responder {
-    let database_url =env::var(constants::DATABASE_URL).expect("This env variable does not exist");
-    HttpResponse::Ok().body(database_url)
+pub struct AppState {
+    db: Pool<Postgres>,
+    env: Config,
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "actix_web=info");
+    }
     dotenv().ok();
-    HttpServer::new(|| {
+    env_logger::init();
+
+    let config = Config::init();
+
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&config.database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("✅Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            println!("🔥 Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
+
+
+    println!("🚀 Server started successfully");
+
+
+    match sqlx::migrate!().run(&pool).await{
+        Ok(_)=>println!("Migrations applied succesfully!"),
+        Err(err)=>{
+            println!("Migration Error! => {err}");
+            std::process::exit(1);
+        }
+    };
+
+    HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:4200")
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                header::ACCEPT,
+            ])
+            .supports_credentials();
         App::new()
-            .service(hello)
-            .service(echo)
-            .route("/db", web::get().to(get_db_url))
+            .app_data(web::Data::new(AppState {
+                db: pool.clone(),
+                env: config.clone(),
+            }))
+            .configure(handler::config)
+            .wrap(cors)
+            .wrap(Logger::default())
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", 8000))?
     .run()
     .await
 }
