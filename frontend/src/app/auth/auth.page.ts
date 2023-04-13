@@ -24,7 +24,7 @@ type ScreenType = 'Sign In' | 'Register';
   providers: [HttpClientService, AuthService],
 })
 export class AuthPage {
-  form: FormGroup;
+  form!: FormGroup;
 
   // Subject to change form validators reactively
   private screen$ = new BehaviorSubject<ScreenType>('Sign In');
@@ -37,53 +37,20 @@ export class AuthPage {
     private authService: AuthService
   ) {
     // Initializing the form. userName and password are always required
-
-    this.form = this.formBuilder.group({
-      firstName: [null, Validators.minLength(2)],
-      lastName: [null, Validators.minLength(2)],
-      userName: [null, { validators: [Validators.required] }],
-      password: [
-        null,
-        { validators: [Validators.minLength(6), Validators.required] },
-      ],
-    });
+    this.initializeForm();
   }
 
   ngOnInit() {
-    const firstNameControl = this.form.get('firstName');
-    const lastNameControl = this.form.get('lastName');
-
-    if (firstNameControl && lastNameControl) {
-      const firstNameSubscription = this.requiredIfRegister(firstNameControl);
-      const lastNameSubscription = this.requiredIfRegister(lastNameControl);
-
-      this.subscriptions.add(firstNameSubscription);
-      this.subscriptions.add(lastNameSubscription);
-    }
+    this.registerValidators();
   }
 
-  getControl(controlName: string) {
-    return this.form.controls[controlName];
-  }
-
-  handleClick(screenType: ScreenType) {
-    this.changeScreen(screenType);
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
   }
 
   changeScreen(screenType: ScreenType) {
     this.form.reset();
     this.screen$.next(screenType);
-  }
-
-  requiredIfRegister(control: AbstractControl) {
-    return this.screen$.pipe().subscribe((screen) => {
-      if (screen && screen === 'Register') {
-        control.addValidators(Validators.required);
-      } else {
-        control.removeValidators(Validators.required);
-      }
-      control.updateValueAndValidity();
-    });
   }
 
   submitForm(screenType: ScreenType, formValue: any) {
@@ -113,7 +80,39 @@ export class AuthPage {
     }
   }
 
-  ngOnDestroy() {
-    this.subscriptions.unsubscribe();
+  private initializeForm() {
+    this.form = this.formBuilder.group({
+      firstName: [null, Validators.minLength(2)],
+      lastName: [null, Validators.minLength(2)],
+      userName: [null, { validators: [Validators.required] }],
+      password: [
+        null,
+        { validators: [Validators.minLength(6), Validators.required] },
+      ],
+    });
+  }
+
+  private requiredIfRegister(control: AbstractControl) {
+    return this.screen$.pipe().subscribe((screen) => {
+      if (screen && screen === 'Register') {
+        control.addValidators(Validators.required);
+      } else {
+        control.removeValidators(Validators.required);
+      }
+      control.updateValueAndValidity();
+    });
+  }
+
+  private registerValidators() {
+    const firstNameControl = this.form.get('firstName');
+    const lastNameControl = this.form.get('lastName');
+
+    if (firstNameControl && lastNameControl) {
+      const firstNameSubscription = this.requiredIfRegister(firstNameControl);
+      const lastNameSubscription = this.requiredIfRegister(lastNameControl);
+
+      this.subscriptions.add(firstNameSubscription);
+      this.subscriptions.add(lastNameSubscription);
+    }
   }
 }
