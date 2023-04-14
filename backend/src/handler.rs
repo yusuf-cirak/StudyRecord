@@ -1,12 +1,12 @@
 use crate::{
     jwt_auth,
-    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User},
+    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema},
     response::FilteredUser,
     AppState,
 };
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    get, post, web, HttpMessage, HttpRequest, HttpResponse, Responder,
+    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -15,7 +15,8 @@ use argon2::{
 use chrono::{prelude::*, Duration};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
-use sqlx::Row;
+
+use sqlx::{Row};
 
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
@@ -150,6 +151,8 @@ async fn get_me_handler(
         .await
         .unwrap();
 
+    
+
     let json_response = serde_json::json!({
         "status":  "success",
         "data": serde_json::json!({
@@ -158,6 +161,69 @@ async fn get_me_handler(
     });
 
     HttpResponse::Ok().json(json_response)
+}
+
+#[put("/users/me")]
+async fn update_user_handler(
+    req: HttpRequest,
+    body: Json<UpdateUserSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+
+    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+
+    let mut query = String::from("UPDATE users SET");
+
+    if let Some(new_photo) = &body.photo {
+        query += &format!(" photo='{}',", new_photo);
+    }
+    
+    if let Some(updated_user_name) = &body.user_name {
+        query += &format!(" user_name='{}',", updated_user_name);
+    }
+
+    match &body.password {
+        Some(password)=>{
+            let salt = SaltString::generate(&mut OsRng);
+        let updated_password = Argon2::default()
+            .hash_password(password.as_bytes(), &salt)
+            .unwrap_or_else(|_| panic!("Error while hashing password"))
+            .to_string();
+
+        query += &format!(" password='{}'", updated_password);
+        },
+        None=>{
+            query.truncate(query.len() - 1);
+        }
+    }
+    query += " WHERE id=$1";
+
+let updated_user = sqlx::query(&query)
+    .bind(user.id)
+    .execute(&data.db)
+    .await;
+
+    match updated_user {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to update user: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
 }
 
 fn filter_user_record(user: &User) -> FilteredUser {
@@ -178,6 +244,7 @@ pub fn config(conf: &mut web::ServiceConfig) {
         .service(health_checker_handler)
         .service(register_user_handler)
         .service(login_user_handler)
+        .service(update_user_handler)
         .service(logout_handler)
         .service(get_me_handler);
 
