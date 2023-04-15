@@ -16,7 +16,7 @@ use chrono::{prelude::*, Duration};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 
-use sqlx::{Row};
+use sqlx::Row;
 
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
