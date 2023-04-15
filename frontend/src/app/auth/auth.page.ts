@@ -1,6 +1,6 @@
 import { AuthService } from './../core/services/auth.service';
-import { AsyncPipe, NgIf } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { NgIf } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -23,7 +23,7 @@ type ScreenType = 'Sign In' | 'Register';
   imports: [IonicModule, NgIf, ReactiveFormsModule, HttpClientModule],
   providers: [HttpClientService, AuthService],
 })
-export class AuthPage {
+export class AuthPage implements OnInit, OnDestroy {
   form!: FormGroup;
 
   // Subject to change form validators reactively
