@@ -1,0 +1,87 @@
+<ion-header class="ion-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button color="primary" [routerLink]="['','profile']">
+        Cancel
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" *ngIf="user$ | async as user">
+  <div class="content-wrapper">
+    <ion-row>
+      <ion-avatar class="user-image" style="width: 150px; height: 150px">
+        <img
+          alt="Silhouette of a person's head"
+          [src]="user.photo==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : 'data:image/png;base64, '+this.updateForm.get('photo')?.value"
+        />
+      </ion-avatar>
+    </ion-row>
+    <ion-col class="add-photo-wrapper" style="display: flex">
+      <ion-button fill="clear" (click)="uploadImageClickHandler()">
+        <ion-icon name="camera-outline"></ion-icon
+        >&nbsp;{{user.photo==='default.png' ? 'Add' : 'Change'}}
+        Photo</ion-button
+      >
+      <ion-button
+        color="black"
+        (click)="passwordButtonClickHandler(!changePassword)"
+      >
+        <ion-icon slot="start" name="lock-closed-outline"></ion-icon>&nbsp;
+        {{changePassword ? 'Keep Password':'Change Password'}}
+      </ion-button>
+    </ion-col>
+
+    <form [formGroup]="updateForm">
+      <div>
+        <ion-input
+          label="User Name"
+          label-placement="floating"
+          fill="solid"
+          formControlName="userName"
+          [minlength]="3"
+          errorText="Minimum length for user name is three"
+        ></ion-input>
+
+        <div class="change-password-container">
+          <div *ngIf="changePassword">
+            <ion-item-divider></ion-item-divider>
+            <ion-input
+              label="Old Password"
+              label-placement="floating"
+              fill="solid"
+              placeholder="******"
+              [minlength]="6"
+              type="password"
+              errorText="Minimum length for password is six"
+              formControlName="oldPassword"
+            ></ion-input>
+            <ion-item-divider></ion-item-divider>
+            <ion-input
+              label="New Password"
+              label-placement="floating"
+              fill="solid"
+              placeholder="******"
+              [minlength]="6"
+              type="password"
+              errorText="Minimum length for password is six"
+              formControlName="newPassword"
+            ></ion-input>
+          </div>
+        </div>
+      </div>
+      <ion-item-divider></ion-item-divider>
+
+      <ion-button
+        strong="true"
+        color="primary"
+        [disabled]="!updateForm.valid"
+        expand="block"
+        (click)="submitForm()"
+      >
+        Done
+      </ion-button>
+    </form>
+  </div>
+</ion-content>
