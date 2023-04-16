@@ -1,0 +1,37 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button text="Home" defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button color="primary" [routerLink]="['','profile-update']">
+        Edit
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" *ngIf="user$ | async as user">
+  <ion-row>
+    <ion-col class="content-col">
+      <ion-avatar class="user-image">
+        <img
+          alt="Silhouette of a person's head"
+          [src]="user.photo==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : user.photo"
+        />
+      </ion-avatar>
+      <ion-text color="dark">
+        <h2 class="user-name">{{user.firstName}} {{user.lastName}}</h2>
+      </ion-text>
+
+      <ion-list>
+        <ion-item>
+          <ion-label position="stacked">User Name</ion-label>
+          <ion-input color="primary" readonly="true"
+            >{{user.userName}}</ion-input
+          >
+        </ion-item>
+      </ion-list>
+    </ion-col>
+  </ion-row>
+</ion-content>
