@@ -1,3 +1,5 @@
+import { User } from './core/api/user';
+
 export interface AppState {
-  count: number;
+  user: User;
 }

@@ -1,7 +1,7 @@
-import { ActionReducerMap, createReducer } from '@ngrx/store';
+import { ActionReducerMap } from '@ngrx/store';
 import { AppState } from './app.state';
-import { countReducer } from './shared/state/count/count.reducer';
+import { userReducer } from './shared/state/user/user.reducer';
 
 export const appReducer: ActionReducerMap<AppState, any> = {
-  count: countReducer,
+  user: userReducer,
 };
