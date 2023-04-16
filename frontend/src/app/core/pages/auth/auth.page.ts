@@ -1,4 +1,4 @@
-import { AuthService } from './../core/services/auth.service';
+import { AuthService } from '../../services/auth.service';
 import { NgIf } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
@@ -11,7 +11,15 @@ import {
 import { IonicModule } from '@ionic/angular';
 import { BehaviorSubject, Subscription } from 'rxjs';
 import { HttpClientModule } from '@angular/common/http';
-import { HttpClientService } from '../shared/services/http-client.service';
+import { HttpClientService } from '../../../shared/services/http-client.service';
+import { Store } from '@ngrx/store';
+import { AppState } from '@capacitor/app';
+import {
+  loginAction,
+  registerAction,
+} from 'src/app/shared/state/user/user.actions';
+import { User } from '../../api/user';
+import { Router } from '@angular/router';
 
 type ScreenType = 'Sign In' | 'Register';
 
@@ -34,7 +42,9 @@ export class AuthPage implements OnInit, OnDestroy {
   }
   constructor(
     private formBuilder: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private store: Store<AppState>,
+    private router: Router
   ) {
     // Initializing the form. userName and password are always required
     this.initializeForm();
@@ -54,8 +64,6 @@ export class AuthPage implements OnInit, OnDestroy {
   }
 
   submitForm(screenType: ScreenType, formValue: any) {
-    console.log(screenType);
-    console.log(formValue);
     // API Call
     if (screenType === 'Register') {
       const registerSubscription = this.authService
@@ -65,7 +73,12 @@ export class AuthPage implements OnInit, OnDestroy {
           user_name: formValue.userName,
           password: formValue.password,
         })
-        .subscribe((res) => console.log('API Response: ' + res));
+        .subscribe({
+          next: (res) => {
+            this.store.dispatch(registerAction({ user: res as User }));
+            this.router.navigate(['', 'home']);
+          },
+        });
 
       this.subscriptions.add(registerSubscription);
     } else {
@@ -74,7 +87,12 @@ export class AuthPage implements OnInit, OnDestroy {
           user_name: formValue.userName,
           password: formValue.password,
         })
-        .subscribe((res) => console.log(res));
+        .subscribe({
+          next: (res) => {
+            this.store.dispatch(loginAction({ user: res as User }));
+            this.router.navigate(['', 'home']);
+          },
+        });
 
       this.subscriptions.add(loginSubscription);
     }
