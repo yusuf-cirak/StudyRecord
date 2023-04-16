@@ -61,11 +61,32 @@ async fn register_user_handler(
 
     match query_result {
         Ok(user) => {
-            let user_response = serde_json::json!({"status": "success","data": serde_json::json!({
-                "user": filter_user_record(&user)
-            })});
 
-            return HttpResponse::Ok().json(user_response);
+            let now = Utc::now();
+    let iat = now.timestamp() as usize;
+        let exp = (now + Duration::minutes(60)).timestamp() as usize;
+            
+            let claims: TokenClaims = TokenClaims {
+                sub: user.id.to_string(),
+                exp,
+                iat,
+            };
+            let token = encode(
+                &Header::default(),
+                &claims,
+                &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
+            )
+            .unwrap();
+        
+            let cookie = Cookie::build("token", token.to_owned())
+                .path("/")
+                .max_age(ActixWebDuration::new(60 * 60, 0))
+                .http_only(true)
+                .finish();
+            let user_response = serde_json::json!({"status": "success","user": filter_user_record(&user)
+            });
+
+            return HttpResponse::Ok().cookie(cookie).json(user_response);
         }
         Err(e) => {
             return HttpResponse::InternalServerError()
@@ -121,7 +142,7 @@ async fn login_user_handler(
 
     HttpResponse::Ok()
         .cookie(cookie)
-        .json(json!({"status": "success", "token": token}))
+        .json(json!({"status": "success", "user": filter_user_record(&user)}))
 }
 
 #[get("/auth/logout")]
@@ -190,22 +211,31 @@ async fn update_user_handler(
     if let Some(updated_user_name) = &body.user_name {
         query += &format!(" user_name='{}',", updated_user_name);
     }
-
-    match &body.password {
-        Some(password)=>{
-            let salt = SaltString::generate(&mut OsRng);
+    if let (Some(current_password), Some(new_password)) = (&body.current_password, &body.new_password) {
+        let parsed_hash = PasswordHash::new(&user.password).unwrap();
+    
+        let is_valid = Argon2::default()
+            .verify_password(current_password.as_bytes(), &parsed_hash)
+            .map_or(false, |_| true);
+    
+        if !is_valid {
+            return HttpResponse::BadRequest()
+                .json(json!({"status": "fail", "message": "Password does not match!"}));
+        }
+    
+        let salt = SaltString::generate(&mut OsRng);
         let updated_password = Argon2::default()
-            .hash_password(password.as_bytes(), &salt)
+            .hash_password(new_password.as_bytes(), &salt)
             .unwrap_or_else(|_| panic!("Error while hashing password"))
             .to_string();
-
+    
         query += &format!(" password='{}'", updated_password);
-        },
-        None=>{
-            query.truncate(query.len() - 1);
-        }
+    } else if let (None, None) = (&body.current_password, &body.new_password) {
+        query.truncate(query.len() - 1);
     }
     query += " WHERE id=$1";
+
+    println!("Query: {}", query);
 
 let updated_user = sqlx::query(&query)
     .bind(user.id)

@@ -42,7 +42,8 @@ pub struct LoginUserSchema {
 #[derive(Debug, Deserialize)]
 pub struct UpdateUserSchema {
     pub user_name: Option<String>,
-    pub password: Option<String>,
+    pub current_password: Option<String>,
+    pub new_password: Option<String>,
     pub photo: Option<String>,
 }
 
