@@ -1,0 +1,11 @@
+.user-info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.content-container {
+  display: flex;
+  gap: 3rem;
+  flex-direction: column;
+}

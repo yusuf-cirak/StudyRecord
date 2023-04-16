@@ -1,0 +1,40 @@
+<ion-menu contentId="main-content">
+  <ion-header>
+    <ion-toolbar> </ion-toolbar>
+  </ion-header>
+  <ion-content class="ion-padding">
+    <div class="content-container">
+      <div class="user-info-container" *ngIf="user$ | async as user">
+        <ion-avatar class="user-avatar">
+          <img
+            alt="Silhouette of a person's head"
+            [src]="user.photo==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : user.photo"
+          />
+        </ion-avatar>
+        <h1>{{user.firstName + ' ' + user.lastName}}</h1>
+      </div>
+      <ion-list>
+        <ion-menu-toggle auto-hide="false" *ngFor="let page of pages">
+          <ion-item [routerDirection]="'root'" [routerLink]="['',page.url]">
+            <ion-icon slot="start" [name]="page.icon"></ion-icon>
+            <ion-label> {{page.title}} </ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+      <!-- <ion-icon name="book-outline"></ion-icon>
+    <ion-icon name="receipt-outline"></ion-icon> -->
+    </div>
+  </ion-content>
+</ion-menu>
+<div class="ion-page" id="main-content">
+  <ion-header>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content class="ion-padding">
+    Tap the button in the toolbar to open the menu.
+  </ion-content>
+</div>
