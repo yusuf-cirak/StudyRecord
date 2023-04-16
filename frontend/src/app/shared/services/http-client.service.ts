@@ -48,7 +48,7 @@ export class HttpClientService {
 
   post<T>(
     requestParameter: Partial<RequestParameters>,
-    body: Partial<T>
+    body: Partial<T> | any
   ): Observable<T> {
     return this.httpClient.post<T>(this.url(requestParameter), body, {
       headers: requestParameter.headers,
@@ -58,7 +58,7 @@ export class HttpClientService {
 
   put<T>(
     requestParameter: Partial<RequestParameters>,
-    body: Partial<T>
+    body: Partial<T> | any
   ): Observable<T> {
     return this.httpClient.put<T>(this.url(requestParameter), body, {
       headers: requestParameter.headers,
