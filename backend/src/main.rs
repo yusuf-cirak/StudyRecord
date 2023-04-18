@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
         .await
     {
         Ok(pool) => {
-            println!("✅Connection to the database is successful!");
+            println!("✅ Connection to the database is successful!");
             pool
         }
         Err(err) => {
@@ -42,11 +42,10 @@ async fn main() -> std::io::Result<()> {
     };
 
 
-    println!("🚀 Server started successfully");
 
 
     match sqlx::migrate!().run(&pool).await{
-        Ok(_)=>println!("Migrations applied succesfully!"),
+        Ok(_)=>println!("🚀 Migrations applied succesfully!"),
         Err(err)=>{
             println!("Migration Error! => {err}");
             std::process::exit(1);
@@ -63,6 +62,7 @@ async fn main() -> std::io::Result<()> {
                 header::ACCEPT,
             ])
             .supports_credentials();
+    println!("CORS policy configured, server is starting! 🚀");
         App::new()
             .app_data(web::Data::new(AppState {
                 db: pool.clone(),

@@ -18,9 +18,9 @@ use serde_json::json;
 
 use sqlx::Row;
 
-#[get("/healthchecker")]
+#[get("/health-check")]
 async fn health_checker_handler() -> impl Responder {
-    const MESSAGE: &str = "JWT Authentication in Rust using Actix-web, Postgres, and SQLX";
+    const MESSAGE: &str = "The application is running healthy!";
 
     HttpResponse::Ok().json(json!({"status": "success", "message": MESSAGE}))
 }
