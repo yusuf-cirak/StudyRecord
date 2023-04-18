@@ -62,7 +62,6 @@ async fn main() -> std::io::Result<()> {
                 header::ACCEPT,
             ])
             .supports_credentials();
-    println!("CORS policy configured, server is starting! 🚀");
         App::new()
             .app_data(web::Data::new(AppState {
                 db: pool.clone(),

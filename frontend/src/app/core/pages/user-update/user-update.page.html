@@ -14,10 +14,13 @@
       <ion-avatar class="user-image" style="width: 150px; height: 150px">
         <img
           alt="Silhouette of a person's head"
-          [src]="user.photo==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : 'data:image/png;base64, '+this.updateForm.get('photo')?.value"
+          [src]="updateForm.get('photo')?.value==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : 'data:image/png;base64, '+updateForm.get('photo')?.value"
         />
       </ion-avatar>
     </ion-row>
+    <ion-text color="dark">
+      <h1 class="user-name">{{user.firstName}} {{user.lastName}}</h1>
+    </ion-text>
     <ion-col class="add-photo-wrapper" style="display: flex">
       <ion-button fill="clear" (click)="uploadImageClickHandler()">
         <ion-icon name="camera-outline"></ion-icon
