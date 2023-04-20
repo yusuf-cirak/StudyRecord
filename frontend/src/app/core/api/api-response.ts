@@ -1,3 +1,3 @@
 export interface ApiResponse {
-  success: boolean;
+  status: 'success' | 'error' | 'fail';
 }
