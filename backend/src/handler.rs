@@ -6,7 +6,7 @@ use crate::{
 };
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put,
+    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put, http::StatusCode,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -167,21 +167,20 @@ async fn get_me_handler(
     let ext = req.extensions();
     let user_id = ext.get::<uuid::Uuid>().unwrap();
 
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+    let user_exists:bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)")
+        .bind(user_id)
         .fetch_one(&data.db)
         .await
         .unwrap();
 
-    
+    let response_json = if user_exists {
+    serde_json::json!({"status": "success"})
+} else {
+    serde_json::json!({"status": "fail", "message": "User not found"})
+};
 
-    let json_response = serde_json::json!({
-        "status":  "success",
-        "data": serde_json::json!({
-            "user": filter_user_record(&user)
-        })
-    });
-
-    HttpResponse::Ok().json(json_response)
+HttpResponse::build(if user_exists {StatusCode::OK} else {StatusCode::NOT_FOUND})
+    .json(response_json)
 }
 
 #[put("/users/me")]
