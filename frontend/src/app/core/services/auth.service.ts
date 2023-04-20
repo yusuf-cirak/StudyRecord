@@ -5,22 +5,24 @@ import { RegisterUser } from '../contracts/user/register-user';
 import { UserResponse } from '../contracts/user/user-response';
 import { User } from '../api/user';
 import { Observable, map } from 'rxjs';
+import { ApiResponse } from '../api/api-response';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AuthService {
+  loggedIn = false;
   constructor(private httpClientService: HttpClientService) {}
 
   login(body: LoginUser): Observable<User> {
     return this.httpClientService
       .post<UserResponse>({ controller: 'auth', action: 'login' }, body)
       .pipe(
-        map((response) => {
+        map((res) => {
           return {
-            id: response.user.id,
-            firstName: response.user.first_name,
-            lastName: response.user.last_name,
-            userName: response.user.user_name,
-            photo: response.user.photo,
+            id: res.user.id,
+            firstName: res.user.first_name,
+            lastName: res.user.last_name,
+            userName: res.user.user_name,
+            photo: res.user.photo,
           } as User;
         })
       );
@@ -30,15 +32,23 @@ export class AuthService {
     return this.httpClientService
       .post<UserResponse>({ controller: 'auth', action: 'register' }, body)
       .pipe(
-        map((response) => {
+        map((res) => {
           return {
-            id: response.user.id,
-            firstName: response.user.first_name,
-            lastName: response.user.last_name,
-            userName: response.user.user_name,
-            photo: response.user.photo,
+            id: res.user.id,
+            firstName: res.user.first_name,
+            lastName: res.user.last_name,
+            userName: res.user.user_name,
+            photo: res.user.photo,
           } as User;
         })
       );
+  }
+
+  checkClientHasToken(): Observable<ApiResponse> {
+    return this.httpClientService.get<ApiResponse>({
+      controller: 'users',
+      action: 'me',
+      withCredentials: true,
+    });
   }
 }
