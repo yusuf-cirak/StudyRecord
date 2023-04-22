@@ -24,7 +24,6 @@ bootstrapApplication(AppComponent, {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     importProvidersFrom(
       HttpClientModule,
-      RouterModule,
       IonicModule.forRoot({}),
       StoreModule.forRoot(appReducer),
       StoreDevtoolsModule.instrument({ maxAge: 25, logOnly: !isDevMode() })
