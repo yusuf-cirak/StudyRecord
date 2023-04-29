@@ -1,12 +1,12 @@
 use crate::{
     jwt_auth,
-    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema},
+    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema, BookDeleteSchema},
     response::FilteredUser,
     AppState,
 };
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put, http::StatusCode,
+    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put, http::StatusCode, delete,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -17,6 +17,7 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 
 use sqlx::Row;
+use uuid::Uuid;
 
 #[get("/health-check")]
 async fn health_checker_handler() -> impl Responder {
@@ -255,6 +256,195 @@ let updated_user = sqlx::query(&query)
     }
 }
 
+#[get("/books")]
+async fn book_get_all_handler(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        BookGetSchema,
+        "SELECT name FROM books  WHERE create_user_id = $1",
+        user_id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(books) => HttpResponse::Ok().json(json!({"status": "success", "data": books})),
+        Err(err) => {
+            eprintln!("Failed to get all books: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[get("/books/{book_id}")]
+async fn book_get_by_id_handler(
+    path: web::Path<String>,
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let book_id = Uuid::parse_str(&path.into_inner()).unwrap();
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        BookGetSchema,
+        "SELECT name FROM books  WHERE create_user_id = $1 AND id = $2",
+        user_id,
+        book_id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(book) => HttpResponse::Ok().json(json!({"status": "success", "data": book})),
+        Err(err) => {
+            eprintln!("Failed to fetch book: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[post("/books")]
+async fn book_create_handler(
+    req: HttpRequest,
+    body: Json<BookCreateSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let book_exists = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM books WHERE name = $1)")
+        .bind(&body.name)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+    if book_exists {
+        return HttpResponse::BadRequest()
+            .json(json!({"status": "fail", "message": "Book already exists"}));
+    }
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        Book,
+        "INSERT INTO books (name,create_user_id) VALUES ($1,$2) RETURNING *",
+        body.name,
+        user_id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(book) => HttpResponse::Ok().json(json!({"status": "success", "book": book})),
+        Err(err) => {
+            eprintln!("Failed to create book: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[put("/books")]
+async fn book_update_handler(
+    req: HttpRequest,
+    body: Json<BookUpdateSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let book = sqlx::query_as!(Book,"SELECT * FROM books WHERE id = $1", body.book_id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+    let create_user_id = book.create_user_id.clone().unwrap();
+
+    if !user_id.eq(&create_user_id) {
+        return HttpResponse::BadRequest()
+            .json(json!({"status": "fail", "message": "You did not created this book"}));
+    }
+    let query = format!("UPDATE books SET name='{}' WHERE id=$1", body.name);
+    let updated_book = sqlx::query(&query)
+    .bind(body.book_id)
+    .execute(&data.db)
+    .await;
+
+    match updated_book {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to update book: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
+ 
+}
+
+#[delete("/books")]
+async fn book_delete_handler(
+    req:HttpRequest,
+    body: Json<BookDeleteSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let book = sqlx::query_as!(Book,"SELECT * FROM books WHERE id = $1",&body.book_id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+        let ext = req.extensions();
+        let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+        let create_user_id = book.create_user_id.clone().unwrap();
+
+        if !user_id.eq(&create_user_id) {
+            return HttpResponse::BadRequest()
+                .json(json!({"status": "fail", "message": "You did not created this book"}));
+        }
+
+  
+    let query = "DELETE FROM books WHERE id=$1";
+    let book_deleted = sqlx::query(&query)
+    .bind(body.book_id)
+    .execute(&data.db)
+    .await;
+
+    match book_deleted {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to delete book: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
+ 
+}
+
 fn filter_user_record(user: &User) -> FilteredUser {
     FilteredUser {
         id: user.id.to_string(),
@@ -275,7 +465,12 @@ pub fn config(conf: &mut web::ServiceConfig) {
         .service(login_user_handler)
         .service(update_user_handler)
         .service(logout_handler)
-        .service(get_me_handler);
+        .service(get_me_handler)
+        .service(book_get_all_handler)
+        .service(book_get_by_id_handler)
+        .service(book_create_handler)
+        .service(book_update_handler)
+        .service(book_delete_handler);
 
     
     conf.service(scope);
