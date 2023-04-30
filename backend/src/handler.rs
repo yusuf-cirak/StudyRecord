@@ -1,6 +1,6 @@
 use crate::{
     jwt_auth,
-    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema, BookDeleteSchema},
+    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema, BookDeleteSchema,Lesson, LessonGetSchema, LessonCreateSchema, LessonUpdateSchema,LessonDeleteSchema },
     response::FilteredUser,
     AppState,
 };
@@ -271,7 +271,7 @@ async fn book_get_all_handler(
         "SELECT name FROM books  WHERE create_user_id = $1",
         user_id
     )
-    .fetch_one(&data.db)
+    .fetch_all(&data.db)
     .await;
 
     match query_result {
@@ -336,7 +336,7 @@ async fn book_create_handler(
     }
 
     let ext = req.extensions();
-    let user_id = ext.get::<uuid::Uuid>().unwrap();
+    let user_id: &Uuid = ext.get::<uuid::Uuid>().unwrap();
 
     let query_result = sqlx::query_as!(
         Book,
@@ -445,6 +445,194 @@ async fn book_delete_handler(
  
 }
 
+#[get("/lessons")]
+async fn lesson_get_all_handler(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        LessonGetSchema,
+        "SELECT name FROM lessons WHERE create_user_id = $1",
+        user_id
+    )
+    .fetch_all(&data.db)
+    .await;
+
+    match query_result {
+        Ok(lessons) => HttpResponse::Ok().json(json!({"status": "success", "data": lessons})),
+        Err(err) => {
+            eprintln!("Failed to get all books: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[get("/lessons/{lesson_id}")]
+async fn lesson_get_by_id_handler(
+    path: web::Path<String>,
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let lesson_id = Uuid::parse_str(&path.into_inner()).unwrap();
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        LessonGetSchema,
+        "SELECT name FROM books  WHERE create_user_id = $1 AND id = $2",
+        user_id,
+        lesson_id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(lesson) => HttpResponse::Ok().json(json!({"status": "success", "data": lesson})),
+        Err(err) => {
+            eprintln!("Failed to fetch book: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[post("/lessons")]
+async fn lesson_create_handler(
+    req: HttpRequest,
+    body: Json<LessonCreateSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let lesson_exists = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM lessons WHERE name = $1)")
+        .bind(&body.name)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+    if lesson_exists {
+        return HttpResponse::BadRequest()
+            .json(json!({"status": "fail", "message": "Book already exists"}));
+    }
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        Lesson,
+        "INSERT INTO lessons (name,create_user_id) VALUES ($1,$2) RETURNING *",
+        body.name,
+        user_id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(lesson) => HttpResponse::Ok().json(json!({"status": "success", "book": lesson})),
+        Err(err) => {
+            eprintln!("Failed to create book: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[put("/lessons")]
+async fn lesson_update_handler(
+    req: HttpRequest,
+    body: Json<LessonUpdateSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let lesson = sqlx::query_as!(Lesson,"SELECT * FROM lessons WHERE id = $1", body.lesson_id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    if !user_id.eq(&lesson.create_user_id) {
+        return HttpResponse::BadRequest()
+            .json(json!({"status": "fail", "message": "You did not created this lesson"}));
+    }
+    let query = format!("UPDATE lessons SET name='{}' WHERE id=$1", body.name);
+    let updated_lesson = sqlx::query(&query)
+    .bind(body.lesson_id)
+    .execute(&data.db)
+    .await;
+
+    match updated_lesson {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to update lesson: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
+ 
+}
+
+#[delete("/lessons")]
+async fn lesson_delete_handler(
+    req:HttpRequest,
+    body: Json<LessonDeleteSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let lesson = sqlx::query_as!(Lesson,"SELECT * FROM lessons WHERE id = $1",&body.lesson_id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+        let ext = req.extensions();
+        let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+        let create_user_id = lesson.create_user_id.clone();
+
+        if !user_id.eq(&create_user_id) {
+            return HttpResponse::BadRequest()
+                .json(json!({"status": "fail", "message": "You did not created this book"}));
+        }
+
+  
+    let query = "DELETE FROM lessons WHERE id=$1";
+    let lesson_deleted = sqlx::query(&query)
+    .bind(body.lesson_id)
+    .execute(&data.db)
+    .await;
+
+    match lesson_deleted {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to delete book: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
+ 
+}
+
 fn filter_user_record(user: &User) -> FilteredUser {
     FilteredUser {
         id: user.id.to_string(),
@@ -470,7 +658,12 @@ pub fn config(conf: &mut web::ServiceConfig) {
         .service(book_get_by_id_handler)
         .service(book_create_handler)
         .service(book_update_handler)
-        .service(book_delete_handler);
+        .service(book_delete_handler)
+        .service(lesson_get_all_handler)
+        .service(lesson_get_by_id_handler)
+        .service(lesson_create_handler)
+        .service(lesson_update_handler)
+        .service(lesson_delete_handler);
 
     
     conf.service(scope);

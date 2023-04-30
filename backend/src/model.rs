@@ -11,9 +11,7 @@ pub struct User {
     pub password: String,
     pub role: String,
     pub photo: String,
-    #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
-    #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
 
@@ -21,27 +19,38 @@ pub struct User {
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Lesson {
     pub id: uuid::Uuid,
+    pub create_user_id: uuid::Uuid,
     pub name: String,
-    #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
-    #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
+#[derive(Debug, Serialize)]
+pub struct LessonGetSchema {
+    pub name: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct LessonCreateSchema {
     pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LessonUpdateSchema {
+    pub lesson_id: uuid::Uuid,
+    pub name: String,
+}
+#[derive(Debug, Deserialize)]
+pub struct LessonDeleteSchema {
+    pub lesson_id: uuid::Uuid,
 }
 
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Book {
     pub id: uuid::Uuid,
-    #[serde(rename = "createUserId")]
     pub create_user_id: Option<uuid::Uuid>,
     pub name: String,
-    #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
-    #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
 
@@ -68,22 +77,14 @@ pub struct BookDeleteSchema {
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct LessonProblemSolve {
-    #[serde(rename = "lessonId")]
     pub lesson_id: uuid::Uuid,
-    #[serde(rename = "createUserId")]
     pub create_user_id: uuid::Uuid,
-    #[serde(rename = "correctAnswer")]
     pub correct_answer: u16,
-    #[serde(rename = "wrongAnswer")]
     pub wrong_answer: u16,
-    #[serde(rename = "emptyAnswer")]
     pub empty_answer: u16,
-    #[serde(rename = "totalTime")]
     pub total_time:u16,
     pub date:DateTime<Utc>,
-    #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
-    #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
 
