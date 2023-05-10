@@ -5,7 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { userSelector } from 'src/app/shared/state/user/user.selectors';
-import { User } from '../../api/user';
+import { User } from '../../../api/user';
 import { AppState } from 'src/app/app.state';
 
 @Component({

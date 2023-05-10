@@ -12,9 +12,9 @@ import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AppState } from 'src/app/app.state';
 import { Observable, of } from 'rxjs';
-import { User } from '../../api/user';
+import { User } from '../../../api/user';
 import { userSelector } from 'src/app/shared/state/user/user.selectors';
-import { ImageService } from '../../services/image.service';
+import { ImageService } from '../../../services/image.service';
 
 @Component({
   selector: 'app-user-update',

@@ -24,7 +24,7 @@ export const routes: Routes = [
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./core/pages/user-detail/user-detail.page').then(
+      import('./core/pages/user/user-detail/user-detail.page').then(
         (m) => m.UserDetailPage
       ),
   },
@@ -32,7 +32,7 @@ export const routes: Routes = [
     path: 'profile-update',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./core/pages/user-update/user-update.page').then(
+      import('./core/pages/user/user-update/user-update.page').then(
         (m) => m.UserUpdatePage
       ),
   },
