@@ -14,7 +14,7 @@
         <h1>{{user.firstName + ' ' + user.lastName}}</h1>
       </div>
       <ion-list>
-        <ion-menu-toggle auto-hide="false" *ngFor="let page of pages">
+        <ion-menu-toggle auto-hide="false" *ngFor="let page of sideBarPages">
           <ion-item [routerDirection]="'root'" [routerLink]="['',page.url]">
             <ion-icon slot="start" [name]="page.icon"></ion-icon>
             <ion-label> {{page.title}} </ion-label>
@@ -35,6 +35,19 @@
     </ion-toolbar>
   </ion-header>
   <ion-content class="ion-padding">
-    Tap the button in the toolbar to open the menu.
+    <div *ngFor="let page of categoryPages">
+      <div class="category-container">
+        <ion-card class="category-card" [routerLink]="['',page.url]">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon class="category-icon" [name]="page.icon"></ion-icon>
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content class="category-text">
+            {{page.title}}
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
   </ion-content>
 </div>

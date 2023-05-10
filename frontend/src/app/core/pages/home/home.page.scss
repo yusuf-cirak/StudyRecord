@@ -9,3 +9,69 @@
   gap: 3rem;
   flex-direction: column;
 }
+
+.categories-listing-main-header {
+  // Override Ionic properties
+  @at-root ion-header#{&}.header-collapse-condense-inactive {
+    // To fix blink when page loads
+    ion-title {
+      visibility: hidden;
+    }
+  }
+}
+
+.categories-listing-main-toolbar {
+  // Override Ionic properties
+  @at-root ion-toolbar#{&} {
+    --background: transparent;
+    --color: var(--ion-color-dark);
+  }
+}
+
+ion-content {
+  top: 0;
+  border-top: var(--app-header-height);
+  border-top-color: #fff;
+}
+
+.categories-call-out {
+  margin: 15px 20px 30px;
+  color: rgba(51, 51, 51, 0.8);
+  text-align: center;
+  line-height: 1.4;
+
+  ion-badge {
+    vertical-align: sub;
+    text-transform: uppercase;
+    margin: 0px 6px;
+  }
+}
+
+.category-card {
+  --color: #fff;
+  width: 60%;
+  text-align: center;
+
+  border-radius: 20px;
+
+  ion-card-title,
+  ion-card-subtitle {
+    --color: #fff;
+  }
+}
+
+.category-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.category-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.category-text {
+  font-size: 1.2rem;
+  font-weight: 500;
+}

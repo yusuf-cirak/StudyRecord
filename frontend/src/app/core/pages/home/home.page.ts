@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RouterLink } from '@angular/router';
@@ -20,18 +20,32 @@ interface Page {
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, RouterLink],
+  imports: [IonicModule, NgFor, NgIf, AsyncPipe, FormsModule, RouterLink],
 })
 export class HomePage {
   user$: Observable<User>;
-  pages: Page[];
+  sideBarPages: Page[];
+  categoryPages: Page[];
   constructor(private store: Store<AppState>) {
     this.user$ = this.store.select(userSelector);
-    this.pages = [
+    this.sideBarPages = [
       {
         icon: 'person-outline',
         title: 'My Profile',
         url: 'profile',
+      },
+    ];
+
+    this.categoryPages = [
+      {
+        icon: 'book-outline',
+        url: 'books',
+        title: 'Manage books',
+      },
+      {
+        icon: 'school-outline',
+        url: 'lessons',
+        title: 'Manage lessons',
       },
     ];
   }
