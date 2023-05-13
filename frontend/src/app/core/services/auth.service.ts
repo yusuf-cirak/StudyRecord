@@ -5,7 +5,6 @@ import { RegisterUser } from '../contracts/user/register-user';
 import { UserResponse } from '../contracts/user/user-response';
 import { User } from '../api/user';
 import { Observable, map } from 'rxjs';
-import { ApiResponse } from '../api/api-response';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -22,7 +21,6 @@ export class AuthService {
             firstName: res.user.first_name,
             lastName: res.user.last_name,
             userName: res.user.user_name,
-            photo: res.user.photo,
           } as User;
         })
       );
@@ -38,17 +36,27 @@ export class AuthService {
             firstName: res.user.first_name,
             lastName: res.user.last_name,
             userName: res.user.user_name,
-            photo: res.user.photo,
           } as User;
         })
       );
   }
 
-  checkClientHasToken(): Observable<ApiResponse> {
-    return this.httpClientService.get<ApiResponse>({
-      controller: 'users',
-      action: 'me',
-      withCredentials: true,
-    });
+  checkClientHasToken(): Observable<User> {
+    return this.httpClientService
+      .get<UserResponse>({
+        controller: 'users',
+        action: 'me',
+      })
+      .pipe(
+        map((res) => {
+          return {
+            id: res.user.id,
+            firstName: res.user.first_name,
+            lastName: res.user.last_name,
+            userName: res.user.user_name,
+            photo: res.user.photo,
+          } as User;
+        })
+      );
   }
 }

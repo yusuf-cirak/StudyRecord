@@ -8,10 +8,12 @@
         <ion-avatar class="user-avatar">
           <img
             alt="Silhouette of a person's head"
-            [src]="user.photo==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : user.photo"
+            [src]=" user.photo ? 'data:image/png;base64, '+user.photo  : 'https://ionicframework.com/docs/img/demos/avatar.svg'"
           />
         </ion-avatar>
-        <h1>{{user.firstName + ' ' + user.lastName}}</h1>
+        <h1>
+          {{user.firstName ? user?.firstName + ' ' + user?.lastName : ''}}
+        </h1>
       </div>
       <ion-list>
         <ion-menu-toggle auto-hide="false" *ngFor="let page of sideBarPages">
@@ -21,8 +23,6 @@
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
-      <!-- <ion-icon name="book-outline"></ion-icon>
-    <ion-icon name="receipt-outline"></ion-icon> -->
     </div>
   </ion-content>
 </ion-menu>
@@ -33,6 +33,7 @@
         <ion-menu-button></ion-menu-button>
       </ion-buttons>
     </ion-toolbar>
+    <!-- <ion-progress-bar type="indeterminate"></ion-progress-bar> -->
   </ion-header>
   <ion-content class="ion-padding">
     <div *ngFor="let page of categoryPages">

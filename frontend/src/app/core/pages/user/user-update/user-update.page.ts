@@ -8,13 +8,16 @@ import {
   Validators,
 } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AppState } from 'src/app/app.state';
 import { Observable, of } from 'rxjs';
 import { User } from '../../../api/user';
 import { userSelector } from 'src/app/shared/state/user/user.selectors';
 import { ImageService } from '../../../services/image.service';
+import { UpdateUser } from 'src/app/core/contracts/user/update-user';
+import { UserService } from 'src/app/core/services/user.service';
+import { updateAction } from 'src/app/shared/state/user/user.actions';
 
 @Component({
   selector: 'app-user-update',
@@ -22,25 +25,26 @@ import { ImageService } from '../../../services/image.service';
   styleUrls: ['./user-update.page.scss'],
   standalone: true,
   imports: [IonicModule, CommonModule, RouterLink, NgIf, ReactiveFormsModule],
-  providers: [ImageService],
+  providers: [ImageService, UserService],
 })
 export class UserUpdatePage implements OnInit {
   user$: Observable<User>;
   updateForm: FormGroup<any>;
-  formIsEdited = false;
 
   changePassword = false;
 
   constructor(
     private store: Store<AppState>,
     private formBuilder: FormBuilder,
-    private imageService: ImageService
+    private imageService: ImageService,
+    private userService: UserService,
+    private router: Router
   ) {
     this.user$ = this.store.select(userSelector);
 
     this.updateForm = this.formBuilder.group({
-      userName: ['', [Validators.required, Validators.minLength(3)]],
-      photo: [''],
+      user_name: ['', [Validators.required, Validators.minLength(3)]],
+      photo: ['default'],
     });
   }
 
@@ -48,14 +52,12 @@ export class UserUpdatePage implements OnInit {
     this.user$
       .subscribe((user) => {
         this.updateForm.patchValue({
-          userName: user.userName,
+          user_name: user.userName,
           photo: user.photo,
         });
       })
       .unsubscribe();
   }
-
-  submitForm() {}
 
   passwordButtonClickHandler(value: boolean) {
     if (value) {
@@ -85,5 +87,17 @@ export class UserUpdatePage implements OnInit {
     const image = await this.imageService.uploadImage();
 
     this.updateForm.controls['photo'].setValue(image.base64String);
+  }
+
+  submitForm(formValues: UpdateUser) {
+    this.userService.update(formValues).subscribe({
+      next: () => {
+        this.store.dispatch(updateAction({ user: { ...formValues } }));
+        this.router.navigate(['/home']);
+      },
+      error: (err) => {
+        console.log(err);
+      },
+    });
   }
 }

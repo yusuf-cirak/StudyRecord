@@ -1,12 +1,12 @@
 use crate::{
     jwt_auth,
-    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema, BookDeleteSchema,Lesson, LessonGetSchema, LessonCreateSchema, LessonUpdateSchema,LessonDeleteSchema },
+    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema,Lesson, LessonGetSchema, LessonCreateSchema, LessonUpdateSchema },
     response::FilteredUser,
     AppState,
 };
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put, http::StatusCode, delete,
+    get, post, web::{self, Json}, HttpMessage, HttpRequest, HttpResponse, Responder, put, delete,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -168,20 +168,42 @@ async fn get_me_handler(
     let ext = req.extensions();
     let user_id = ext.get::<uuid::Uuid>().unwrap();
 
-    let user_exists:bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)")
-        .bind(user_id)
-        .fetch_one(&data.db)
+        let query_result = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+        .fetch_optional(&data.db)
         .await
         .unwrap();
 
-    let response_json = if user_exists {
-    serde_json::json!({"status": "success"})
-} else {
-    serde_json::json!({"status": "fail", "message": "User not found"})
-};
 
-HttpResponse::build(if user_exists {StatusCode::OK} else {StatusCode::NOT_FOUND})
-    .json(response_json)
+    let user = query_result.unwrap();
+
+        let now = Utc::now();
+        let iat = now.timestamp() as usize;
+        let exp = (now + Duration::minutes(60)).timestamp() as usize;
+        let claims: TokenClaims = TokenClaims {
+            sub: user.id.to_string(),
+            exp,
+            iat,
+        };
+    
+        let token = encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
+        )
+        .unwrap();
+    
+        let cookie = Cookie::build("token", token.to_owned())
+            .path("/")
+            .max_age(ActixWebDuration::new(60 * 60, 0))
+            .http_only(true)
+            .finish();
+
+        println!("{:?}", user);
+    
+        HttpResponse::Ok()
+            .cookie(cookie)
+            .json(json!({"status": "success", "user": filter_user_record(&user)}))
+   
 }
 
 #[put("/users/me")]
@@ -191,10 +213,9 @@ async fn update_user_handler(
     data: web::Data<AppState>,
     _: jwt_auth::JwtMiddleware,
 ) -> impl Responder {
-
+    println!("Req received");
     let ext = req.extensions();
     let user_id = ext.get::<uuid::Uuid>().unwrap();
-
 
     let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
         .fetch_one(&data.db)
@@ -206,6 +227,7 @@ async fn update_user_handler(
 
     if let Some(new_photo) = &body.photo {
         query += &format!(" photo='{}',", new_photo);
+
     }
     
     if let Some(updated_user_name) = &body.user_name {
@@ -268,7 +290,7 @@ async fn book_get_all_handler(
 
     let query_result = sqlx::query_as!(
         BookGetSchema,
-        "SELECT name FROM books  WHERE create_user_id = $1",
+        "SELECT id,name FROM books  WHERE create_user_id = $1",
         user_id
     )
     .fetch_all(&data.db)
@@ -299,7 +321,7 @@ async fn book_get_by_id_handler(
 
     let query_result = sqlx::query_as!(
         BookGetSchema,
-        "SELECT name FROM books  WHERE create_user_id = $1 AND id = $2",
+        "SELECT id,name FROM books  WHERE create_user_id = $1 AND id = $2",
         user_id,
         book_id
     )
@@ -342,7 +364,7 @@ async fn book_create_handler(
         Book,
         "INSERT INTO books (name,create_user_id) VALUES ($1,$2) RETURNING *",
         body.name,
-        user_id
+        user_id,
     )
     .fetch_one(&data.db)
     .await;
@@ -400,15 +422,17 @@ async fn book_update_handler(
  
 }
 
-#[delete("/books")]
+#[delete("/books/{book_id}")]
 async fn book_delete_handler(
+    path: web::Path<String>,
     req:HttpRequest,
-    body: Json<BookDeleteSchema>,
     data: web::Data<AppState>,
     _: jwt_auth::JwtMiddleware,
 ) -> impl Responder {
 
-    let book = sqlx::query_as!(Book,"SELECT * FROM books WHERE id = $1",&body.book_id)
+    let book_id = Uuid::parse_str(&path.into_inner()).unwrap();
+
+    let book = sqlx::query_as!(Book,"SELECT * FROM books WHERE id = $1",book_id)
         .fetch_one(&data.db)
         .await
         .unwrap();
@@ -426,7 +450,7 @@ async fn book_delete_handler(
   
     let query = "DELETE FROM books WHERE id=$1";
     let book_deleted = sqlx::query(&query)
-    .bind(body.book_id)
+    .bind(book_id)
     .execute(&data.db)
     .await;
 
@@ -457,7 +481,7 @@ async fn lesson_get_all_handler(
 
     let query_result = sqlx::query_as!(
         LessonGetSchema,
-        "SELECT name FROM lessons WHERE create_user_id = $1",
+        "SELECT id,name FROM lessons WHERE create_user_id = $1",
         user_id
     )
     .fetch_all(&data.db)
@@ -488,7 +512,7 @@ async fn lesson_get_by_id_handler(
 
     let query_result = sqlx::query_as!(
         LessonGetSchema,
-        "SELECT name FROM books  WHERE create_user_id = $1 AND id = $2",
+        "SELECT id,name FROM lessons  WHERE create_user_id = $1 AND id = $2",
         user_id,
         lesson_id
     )
@@ -498,7 +522,7 @@ async fn lesson_get_by_id_handler(
     match query_result {
         Ok(lesson) => HttpResponse::Ok().json(json!({"status": "success", "data": lesson})),
         Err(err) => {
-            eprintln!("Failed to fetch book: {}", err);
+            eprintln!("Failed to fetch lesson: {}", err);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -531,7 +555,7 @@ async fn lesson_create_handler(
         Lesson,
         "INSERT INTO lessons (name,create_user_id) VALUES ($1,$2) RETURNING *",
         body.name,
-        user_id
+        user_id,
     )
     .fetch_one(&data.db)
     .await;
@@ -588,15 +612,18 @@ async fn lesson_update_handler(
  
 }
 
-#[delete("/lessons")]
+#[delete("/lessons/{lesson_id}")]
 async fn lesson_delete_handler(
+    path: web::Path<String>,
     req:HttpRequest,
-    body: Json<LessonDeleteSchema>,
     data: web::Data<AppState>,
     _: jwt_auth::JwtMiddleware,
 ) -> impl Responder {
 
-    let lesson = sqlx::query_as!(Lesson,"SELECT * FROM lessons WHERE id = $1",&body.lesson_id)
+    let lesson_id = Uuid::parse_str(&path.into_inner()).unwrap();
+
+
+    let lesson = sqlx::query_as!(Lesson,"SELECT * FROM lessons WHERE id = $1",lesson_id)
         .fetch_one(&data.db)
         .await
         .unwrap();
@@ -614,7 +641,7 @@ async fn lesson_delete_handler(
   
     let query = "DELETE FROM lessons WHERE id=$1";
     let lesson_deleted = sqlx::query(&query)
-    .bind(body.lesson_id)
+    .bind(lesson_id)
     .execute(&data.db)
     .await;
 
@@ -626,7 +653,7 @@ async fn lesson_delete_handler(
             return HttpResponse::Ok().json(response)
         }
         Err(err) => {
-            eprintln!("Failed to delete book: {}", err);
+            eprintln!("Failed to delete lesson: {}", err);
             return HttpResponse::NoContent().finish()
         }
     }
@@ -641,8 +668,6 @@ fn filter_user_record(user: &User) -> FilteredUser {
         user_name: user.user_name.to_owned(),
         photo: user.photo.to_owned(),
         role: user.role.to_owned(),
-        createdAt: user.created_at.unwrap(),
-        updatedAt: user.updated_at.unwrap(),
     }
 }
 

@@ -3,5 +3,5 @@ export interface User {
   firstName?: string;
   lastName?: string;
   userName?: string;
-  photo?: string;
+  photo?: string | null;
 }

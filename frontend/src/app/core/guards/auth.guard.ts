@@ -1,18 +1,25 @@
 import { inject } from '@angular/core';
-import { map, catchError } from 'rxjs';
+import { map, catchError, tap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { loginAction } from 'src/app/shared/state/user/user.actions';
+import { User } from '../api/user';
 
 export const authGuard = () => {
   const authService = inject(AuthService);
+  console.log(authService.loggedIn);
   if (authService.loggedIn) {
     return true;
   }
 
   const router = inject(Router);
 
+  const store = inject(Store);
+
   return authService.checkClientHasToken().pipe(
-    map(() => {
+    map((res: User) => {
+      store.dispatch(loginAction({ user: res }));
       authService.loggedIn = true;
       return true;
     }),

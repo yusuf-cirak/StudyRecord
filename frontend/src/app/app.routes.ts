@@ -1,6 +1,10 @@
+import { Lesson } from './core/api/lesson';
 import { Routes } from '@angular/router';
-import { authPageGuard } from './core/guards/auth.page.guard';
 import { authGuard } from './core/guards/auth.guard';
+import { BookResolver } from './core/resolvers/book.resolver';
+import { BookListResolver } from './core/resolvers/book-list.resolver';
+import { LessonResolver } from './core/resolvers/lesson.resolver';
+import { LessonListResolver } from './core/resolvers/lesson-list.resolver';
 
 export const routes: Routes = [
   {
@@ -10,7 +14,7 @@ export const routes: Routes = [
   },
   {
     path: 'auth',
-    canActivate: [authPageGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./core/pages/auth/auth.page').then((m) => m.AuthPage),
   },
@@ -34,6 +38,64 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./core/pages/user/user-update/user-update.page').then(
         (m) => m.UserUpdatePage
+      ),
+  },
+  {
+    path: 'book-list',
+    canActivate: [authGuard],
+    resolve: {
+      books: BookListResolver,
+    },
+    loadComponent: () =>
+      import('./core/pages/book/book-list/book-list.page').then(
+        (m) => m.BookListPage
+      ),
+  },
+  {
+    path: 'book-show',
+    loadComponent: () =>
+      import('./core/pages/book/book-show/book-show.page').then(
+        (m) => m.BookShowPage
+      ),
+  },
+  {
+    path: 'book-show/:id',
+    canActivate: [authGuard],
+    resolve: {
+      book: BookResolver,
+    },
+    loadComponent: () =>
+      import('./core/pages/book/book-show/book-show.page').then(
+        (m) => m.BookShowPage
+      ),
+  },
+  {
+    path: 'lesson-list',
+    canActivate: [authGuard],
+    resolve: {
+      lessons: LessonListResolver,
+    },
+    loadComponent: () =>
+      import('./core/pages/lesson/lesson-list/lesson-list.page').then(
+        (m) => m.LessonListPage
+      ),
+  },
+  {
+    path: 'lesson-show',
+    loadComponent: () =>
+      import('./core/pages/lesson/lesson-show/lesson-show.page').then(
+        (m) => m.LessonShowPage
+      ),
+  },
+  {
+    path: 'lesson-show/:id',
+    canActivate: [authGuard],
+    resolve: {
+      lesson: LessonResolver,
+    },
+    loadComponent: () =>
+      import('./core/pages/lesson/lesson-show/lesson-show.page').then(
+        (m) => m.LessonShowPage
       ),
   },
 ];

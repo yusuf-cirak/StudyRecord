@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class ImageService {
   constructor() {}
 

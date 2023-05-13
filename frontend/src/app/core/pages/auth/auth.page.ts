@@ -29,7 +29,7 @@ type ScreenType = 'Sign In' | 'Register';
   styleUrls: ['./auth.page.scss'],
   standalone: true,
   imports: [IonicModule, NgIf, ReactiveFormsModule, HttpClientModule],
-  providers: [HttpClientService, AuthService],
+  providers: [HttpClientService],
 })
 export class AuthPage implements OnInit, OnDestroy {
   form!: FormGroup;
@@ -89,7 +89,11 @@ export class AuthPage implements OnInit, OnDestroy {
         })
         .subscribe({
           next: (res) => {
+            let photo = null;
+            if (res.photo !== null) {
+            }
             this.store.dispatch(loginAction({ user: res as User }));
+            this.authService.loggedIn = true;
             this.router.navigate(['', 'home']);
           },
         });

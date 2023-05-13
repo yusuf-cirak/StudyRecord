@@ -1,7 +1,5 @@
-use chrono::prelude::*;
 use serde::Serialize;
 
-#[allow(non_snake_case)]
 #[derive(Debug, Serialize)]
 pub struct FilteredUser {
     pub id: String,
@@ -10,8 +8,6 @@ pub struct FilteredUser {
     pub user_name: String,
     pub role: String,
     pub photo: String,
-    pub createdAt: DateTime<Utc>,
-    pub updatedAt: DateTime<Utc>,
 }
 
 #[derive(Serialize, Debug)]

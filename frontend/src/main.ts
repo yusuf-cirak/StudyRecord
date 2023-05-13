@@ -13,7 +13,8 @@ import { environment } from './environments/environment';
 import { StoreModule } from '@ngrx/store';
 import { appReducer } from './app/app.reducer';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { AuthInterceptor } from './app/shared/interceptors/auth.interceptor';
 
 if (environment.production) {
   enableProdMode();
@@ -22,6 +23,7 @@ if (environment.production) {
 bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     importProvidersFrom(
       HttpClientModule,
       IonicModule.forRoot({}),

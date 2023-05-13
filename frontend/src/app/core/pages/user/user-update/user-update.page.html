@@ -14,7 +14,7 @@
       <ion-avatar class="user-image" style="width: 150px; height: 150px">
         <img
           alt="Silhouette of a person's head"
-          [src]="updateForm.get('photo')?.value==='default.png' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : 'data:image/png;base64, '+updateForm.get('photo')?.value"
+          [src]="updateForm.get('photo')?.value==='default' ? 'https://ionicframework.com/docs/img/demos/avatar.svg' : 'data:image/png;base64, '+updateForm.get('photo')?.value"
         />
       </ion-avatar>
     </ion-row>
@@ -42,7 +42,7 @@
           label="User Name"
           label-placement="floating"
           fill="solid"
-          formControlName="userName"
+          formControlName="user_name"
           [minlength]="3"
           errorText="Minimum length for user name is three"
         ></ion-input>
@@ -81,9 +81,9 @@
         color="primary"
         [disabled]="!updateForm.valid"
         expand="block"
-        (click)="submitForm()"
+        (click)="submitForm(updateForm.value)"
       >
-        Done
+        Save
       </ion-button>
     </form>
   </div>

@@ -1,0 +1,46 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button
+        text="Cancel"
+        defaultHref="/lesson-list"
+      ></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="item-show-container">
+    <ion-card class="item-card">
+      <ion-card-header>
+        <ion-card-title style="display: flex; justify-content: center">
+          <ion-icon class="item-icon" name="school-outline"></ion-icon>
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content
+        ><span class="card-span"
+          >{{(id ? 'Update' : 'Add') + ' Lesson'}}</span
+        ></ion-card-content
+      >
+    </ion-card>
+
+    <form [formGroup]="form">
+      <div class="item-show-form-container">
+        <div>
+          <ion-input
+            label="Lesson Name"
+            label-placement="floating"
+            fill="solid"
+            formControlName="name"
+          ></ion-input>
+        </div>
+        <ion-button
+          (click)="save(form.value)"
+          expand="block"
+          [disabled]="!form.valid"
+          >Save</ion-button
+        >
+      </div>
+    </form>
+  </div>
+</ion-content>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AsyncPipe, CommonModule, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -8,6 +8,8 @@ import { AppState } from 'src/app/app.state';
 import { userSelector } from 'src/app/shared/state/user/user.selectors';
 import { Observable } from 'rxjs';
 import { User } from '../../api/user';
+import { AuthService } from '../../services/auth.service';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 interface Page {
   url: string;
@@ -39,12 +41,12 @@ export class HomePage {
     this.categoryPages = [
       {
         icon: 'book-outline',
-        url: 'books',
+        url: 'book-list',
         title: 'Manage books',
       },
       {
         icon: 'school-outline',
-        url: 'lessons',
+        url: 'lesson-list',
         title: 'Manage lessons',
       },
     ];
