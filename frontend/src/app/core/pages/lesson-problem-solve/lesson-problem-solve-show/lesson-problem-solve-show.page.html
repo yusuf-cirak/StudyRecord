@@ -1,0 +1,83 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button
+        text="Cancel"
+        defaultHref="/lesson-problem-solve-list"
+      ></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content [fullscreen]="true">
+  <div class="item-show-container">
+    <form [formGroup]="form">
+      <div class="item-show-form-container" style="padding-top: 320px">
+        <ion-card class="item-card">
+          <ion-card-header>
+            <ion-card-title style="display: flex; justify-content: center">
+              <ion-icon class="item-icon" name="bar-chart-outline"></ion-icon>
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content
+            ><span class="card-span"
+              >{{(id ? 'Update' : 'Add') + ' Lesson Problem Solve Data'}}</span
+            ></ion-card-content
+          >
+        </ion-card>
+        <ion-select
+          label="Lesson"
+          label-placement="floating"
+          fill="outline"
+          formControlName="lesson_id"
+        >
+          <ion-select-option *ngFor="let lesson of lessons" [value]="lesson.id"
+            >{{lesson.name}}</ion-select-option
+          >
+        </ion-select>
+        <ion-item>
+          <ion-input
+            label="Correct Answer"
+            labelPlacement="floating"
+            placeholder="Correct Answer Count"
+            formControlName="correct_answer"
+            type="number"
+            errorText="Invalid correct answer count"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Wrong Answer"
+            labelPlacement="floating"
+            placeholder="Correct Wrong Count"
+            formControlName="wrong_answer"
+            type="number"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Empty Answer"
+            labelPlacement="floating"
+            placeholder="Empty Answer Count"
+            formControlName="empty_answer"
+            type="number"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Total Time "
+            labelPlacement="floating"
+            placeholder="Total time as minute"
+            formControlName="total_time"
+            type="number"
+          ></ion-input>
+        </ion-item>
+        <ion-button
+          (click)="save(form.value)"
+          expand="block"
+          [disabled]="!form.valid"
+          >Save</ion-button
+        >
+      </div>
+    </form>
+  </div>
+</ion-content>

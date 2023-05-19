@@ -1,10 +1,12 @@
 import { Lesson } from './core/api/lesson';
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
 import { BookResolver } from './core/resolvers/book.resolver';
 import { BookListResolver } from './core/resolvers/book-list.resolver';
 import { LessonResolver } from './core/resolvers/lesson.resolver';
 import { LessonListResolver } from './core/resolvers/lesson-list.resolver';
+import { authPageGuard, authGuard } from './core/guards/guards';
+import { LessonProblemSolveListResolver } from './core/resolvers/lesson-problem-solve-list.resolver';
+import { LessonProblemSolveResolver } from './core/resolvers/lesson-problem-solve.resolver';
 
 export const routes: Routes = [
   {
@@ -14,7 +16,7 @@ export const routes: Routes = [
   },
   {
     path: 'auth',
-    canActivate: [authGuard],
+    canActivate: [authPageGuard],
     loadComponent: () =>
       import('./core/pages/auth/auth.page').then((m) => m.AuthPage),
   },
@@ -97,5 +99,41 @@ export const routes: Routes = [
       import('./core/pages/lesson/lesson-show/lesson-show.page').then(
         (m) => m.LessonShowPage
       ),
+  },
+  {
+    path: 'lesson-problem-solve-list',
+    canActivate: [authGuard],
+    resolve: {
+      lessons: LessonListResolver,
+      lessonProblemSolves: LessonProblemSolveListResolver,
+    },
+
+    loadComponent: () =>
+      import(
+        './core/pages/lesson-problem-solve/lesson-problem-solve-list/lesson-problem-solve-list.page'
+      ).then((m) => m.LessonProblemSolveListPage),
+  },
+  {
+    path: 'lesson-problem-solve-show',
+    canActivate: [authGuard],
+    resolve: {
+      lessons: LessonListResolver,
+    },
+    loadComponent: () =>
+      import(
+        './core/pages/lesson-problem-solve/lesson-problem-solve-show/lesson-problem-solve-show.page'
+      ).then((m) => m.LessonProblemSolveShowPage),
+  },
+  {
+    path: 'lesson-problem-solve-show/:id',
+    canActivate: [authGuard],
+    resolve: {
+      lessons: LessonListResolver,
+      lessonProblemSolve: LessonProblemSolveResolver,
+    },
+    loadComponent: () =>
+      import(
+        './core/pages/lesson-problem-solve/lesson-problem-solve-show/lesson-problem-solve-show.page'
+      ).then((m) => m.LessonProblemSolveShowPage),
   },
 ];

@@ -49,6 +49,11 @@ export class HomePage {
         url: 'lesson-list',
         title: 'Manage lessons',
       },
+      {
+        icon: 'bar-chart-outline',
+        url: 'lesson-problem-solve-list',
+        title: 'Manage lesson problem solves',
+      },
     ];
   }
 }

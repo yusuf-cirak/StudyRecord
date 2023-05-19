@@ -65,14 +65,50 @@ pub struct BookUpdateSchema {
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct LessonProblemSolve {
+    pub id: uuid::Uuid,
     pub lesson_id: uuid::Uuid,
     pub create_user_id: uuid::Uuid,
-    pub correct_answer: u16,
-    pub wrong_answer: u16,
-    pub empty_answer: u16,
-    pub total_time:u16,
+    pub correct_answer: i16,
+    pub wrong_answer: i16,
+    pub empty_answer: i16,
+    pub total_time: i32,
+    pub date: DateTime<Utc>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+pub struct LessonProblemSolveGetSchema {
+    pub id: uuid::Uuid,
+    pub lesson_id: uuid::Uuid,
+    pub create_user_id: uuid::Uuid,
+    pub correct_answer: i16,
+    pub wrong_answer: i16,
+    pub empty_answer: i16,
+    pub total_time:i32,
     pub date:DateTime<Utc>,
 }
+
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+pub struct LessonProblemSolveCreateSchema {
+    pub lesson_id: uuid::Uuid,
+    pub correct_answer: i16,
+    pub wrong_answer: i16,
+    pub empty_answer: i16,
+    pub total_time:i32,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+pub struct LessonProblemSolveUpdateSchema {
+    pub id: uuid::Uuid,
+    pub lesson_id: uuid::Uuid,
+    pub correct_answer: i16,
+    pub wrong_answer: i16,
+    pub empty_answer: i16,
+    pub total_time:i32,
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenClaims {

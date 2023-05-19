@@ -8,7 +8,6 @@ import { User } from '../api/user';
 
 export const authGuard = () => {
   const authService = inject(AuthService);
-  console.log(authService.loggedIn);
   if (authService.loggedIn) {
     return true;
   }
@@ -27,4 +26,13 @@ export const authGuard = () => {
       return router.navigateByUrl('/auth');
     })
   );
+};
+
+export const authPageGuard = () => {
+  const authService = inject(AuthService);
+  if (authService.loggedIn) {
+    return false;
+  }
+
+  return true;
 };

@@ -1,0 +1,79 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button text="Home" defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div
+    class="add-button-container"
+    [routerLink]="['','lesson-problem-solve-show']"
+  >
+    <ion-button fill="outline">
+      <div class="button-inner-container">
+        <ion-icon
+          name="add-outline"
+          style="width: 30px; height: 30px"
+        ></ion-icon>
+        <span>New Lesson Problem Solve</span>
+      </div></ion-button
+    >
+  </div>
+  <div class="search-bar-container">
+    <ion-searchbar
+      [animated]="true"
+      placeholder="Search"
+      [clearIcon]="true"
+      (ionInput)="search($any($event).detail.value)"
+    ></ion-searchbar>
+  </div>
+  <div *ngFor="let lessonProblemSolve of lessonProblemSolves">
+    <div class="item-container">
+      <ion-card class="item-card">
+        <ion-card-header>
+          <ion-card-title class="card-container">
+            <ion-icon
+              class="icon"
+              name="create-outline"
+              (click)="openAlert(lessonProblemSolve,'update')"
+            ></ion-icon>
+            <ion-icon
+              class="icon"
+              name="trash-outline"
+              id="present-alert"
+              (click)="openAlert(lessonProblemSolve,'delete')"
+            ></ion-icon>
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="item-name">
+          Lesson Name: {{lessonProblemSolve.lesson.name}}
+        </ion-card-content>
+        <ion-card-content class="item-name">
+          Correct Answer: {{lessonProblemSolve.correct_answer}}
+        </ion-card-content>
+        <ion-card-content class="item-name">
+          Empty Answer: {{lessonProblemSolve.empty_answer}}
+        </ion-card-content>
+        <ion-card-content class="item-name">
+          Wrong Answer: {{lessonProblemSolve.wrong_answer}}
+        </ion-card-content>
+        <ion-card-content class="item-name">
+          Total Time: {{lessonProblemSolve.total_time}}
+        </ion-card-content>
+        <ion-card-content class="item-name">
+          Date: {{lessonProblemSolve.date}}
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content>
+
+<ion-alert
+  #alert
+  class="custom-alert"
+  header="Are you sure?"
+  [buttons]="alertButtons"
+  (didDismiss)="handleAlertClick($any($event).detail.role)"
+></ion-alert>

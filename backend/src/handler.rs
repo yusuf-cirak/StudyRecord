@@ -1,6 +1,6 @@
 use crate::{
     jwt_auth,
-    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema,Lesson, LessonGetSchema, LessonCreateSchema, LessonUpdateSchema },
+    model::{LoginUserSchema, RegisterUserSchema, TokenClaims, User, UpdateUserSchema,Book,BookGetSchema, BookCreateSchema, BookUpdateSchema,Lesson, LessonGetSchema, LessonCreateSchema, LessonUpdateSchema,LessonProblemSolve,LessonProblemSolveGetSchema, LessonProblemSolveCreateSchema, LessonProblemSolveUpdateSchema },
     response::FilteredUser,
     AppState,
 };
@@ -660,6 +660,205 @@ async fn lesson_delete_handler(
  
 }
 
+#[get("/lesson-problem-solves")]
+async fn lesson_problem_solves_get_all_handler(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        LessonProblemSolveGetSchema,
+        "SELECT * FROM lesson_problem_solves WHERE create_user_id = $1",
+        user_id
+    )
+    .fetch_all(&data.db)
+    .await;
+
+    match query_result {
+        Ok(lesson_problem_solves) => HttpResponse::Ok().json(json!({"status": "success", "data": lesson_problem_solves})),
+        Err(err) => {
+            eprintln!("Failed to get all lesson problem solves: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[get("/lesson-problem-solves/{id}")]
+async fn lesson_problem_solve_get_by_id_handler(
+    path: web::Path<String>,
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let id = Uuid::parse_str(&path.into_inner()).unwrap();
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let query_result = sqlx::query_as!(
+        LessonProblemSolveGetSchema,
+        "SELECT * FROM lesson_problem_solves  WHERE create_user_id = $1 AND id = $2",
+        user_id,
+        id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(lesson_problem_solve) => HttpResponse::Ok().json(json!({"status": "success", "data": lesson_problem_solve})),
+        Err(err) => {
+            eprintln!("Failed to fetch lesson problem solve data: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[post("/lesson-problem-solves")]
+async fn lesson_problem_solve_create_handler(
+    req: HttpRequest,
+    body: Json<LessonProblemSolveCreateSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    let now = Utc::now();
+
+    let query_result = sqlx::query_as!(
+        LessonProblemSolve,
+        "INSERT INTO lesson_problem_solves (lesson_id,create_user_id,correct_answer,wrong_answer,empty_answer,total_time,date) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",
+        body.lesson_id,
+        user_id,
+        body.correct_answer,
+        body.wrong_answer,
+        body.empty_answer,
+        body.total_time,
+        now
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(lesson_problem_solve) => HttpResponse::Ok().json(json!({"status": "success", "data": lesson_problem_solve})),
+        Err(err) => {
+            eprintln!("Failed to create lesson problem solve data: {}", err);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+ 
+}
+
+#[put("/lesson-problem-solves")]
+async fn lesson_problem_solve_update_handler(
+    req: HttpRequest,
+    body: Json<LessonProblemSolveUpdateSchema>,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let lesson_problem_solve = sqlx::query_as!(LessonProblemSolve,"SELECT * FROM lesson_problem_solves WHERE id = $1", body.id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    if !user_id.eq(&lesson_problem_solve.create_user_id) {
+        return HttpResponse::BadRequest()
+            .json(json!({"status": "fail", "message": "You did not created this"}));
+    }
+
+    let now = Utc::now();
+
+
+    let query = format!("UPDATE lesson_problem_solves SET lesson_id = $1, create_user_id = $2, correct_answer = $3, wrong_answer = $4, empty_answer = $5, total_time = $6, date = $7 WHERE id = $8");
+let updated_problem_solve = sqlx::query(&query)
+    .bind(body.lesson_id)
+    .bind(user_id)
+    .bind(body.correct_answer)
+    .bind(body.wrong_answer)
+    .bind(body.empty_answer)
+    .bind(body.total_time)
+    .bind(now)
+    .bind(body.id)
+    .execute(&data.db)
+    .await;
+
+
+    match updated_problem_solve {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to update lesson: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
+ 
+}
+
+#[delete("/lesson-problem-solves/{id}")]
+async fn lesson_problem_solve_delete_handler(
+    path: web::Path<String>,
+    req:HttpRequest,
+    data: web::Data<AppState>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+
+    let id = Uuid::parse_str(&path.into_inner()).unwrap();
+
+
+    let lesson_problem_solve = sqlx::query_as!(LessonProblemSolveGetSchema,"SELECT * FROM lesson_problem_solves WHERE id = $1",id)
+        .fetch_one(&data.db)
+        .await
+        .unwrap();
+
+        let ext = req.extensions();
+        let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+        let create_user_id = lesson_problem_solve.create_user_id.clone();
+
+        if !user_id.eq(&create_user_id) {
+            return HttpResponse::BadRequest()
+                .json(json!({"status": "fail", "message": "You did not created this"}));
+        }
+
+  
+    let query = "DELETE FROM lesson_problem_solves WHERE id=$1";
+    let lesson_problem_solve_deleted = sqlx::query(&query)
+    .bind(id)
+    .execute(&data.db)
+    .await;
+
+    match lesson_problem_solve_deleted {
+        Ok(_) => {
+            let response = serde_json::json!({
+                "status": "success",
+            });
+            return HttpResponse::Ok().json(response)
+        }
+        Err(err) => {
+            eprintln!("Failed to delete: {}", err);
+            return HttpResponse::NoContent().finish()
+        }
+    }
+ 
+}
+
 fn filter_user_record(user: &User) -> FilteredUser {
     FilteredUser {
         id: user.id.to_string(),
@@ -688,7 +887,12 @@ pub fn config(conf: &mut web::ServiceConfig) {
         .service(lesson_get_by_id_handler)
         .service(lesson_create_handler)
         .service(lesson_update_handler)
-        .service(lesson_delete_handler);
+        .service(lesson_delete_handler)
+        .service(lesson_problem_solves_get_all_handler)
+        .service(lesson_problem_solve_get_by_id_handler)
+        .service(lesson_problem_solve_create_handler)
+        .service(lesson_problem_solve_update_handler)
+        .service(lesson_problem_solve_delete_handler);
 
     
     conf.service(scope);

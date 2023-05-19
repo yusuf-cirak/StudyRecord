@@ -29,8 +29,9 @@ CREATE TABLE books (
 CREATE INDEX book_names_index ON books (name);
 
 CREATE TABLE lesson_problem_solves (
-    lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
-    create_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    id UUID NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    create_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     correct_answer SMALLINT NOT NULL,
     wrong_answer SMALLINT NOT NULL,
     empty_answer SMALLINT NOT NULL,
