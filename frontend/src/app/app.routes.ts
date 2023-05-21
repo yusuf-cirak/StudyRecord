@@ -136,4 +136,11 @@ export const routes: Routes = [
         './core/pages/lesson-problem-solve/lesson-problem-solve-show/lesson-problem-solve-show.page'
       ).then((m) => m.LessonProblemSolveShowPage),
   },
+  {
+    path: 'lesson-problem-solve-chart',
+    loadComponent: () =>
+      import(
+        './core/pages/lesson-problem-solve/lesson-problem-solve-chart/lesson-problem-solve-chart.page'
+      ).then((m) => m.LessonProblemSolveChartPage),
+  },
 ];
