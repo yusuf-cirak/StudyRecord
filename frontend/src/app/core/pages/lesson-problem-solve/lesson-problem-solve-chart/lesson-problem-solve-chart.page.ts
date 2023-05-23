@@ -1,279 +1,246 @@
-import { Component } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
-import { ChartsDataService } from 'src/app/core/services/charts-data.service';
-import { CHART_LABELS } from 'src/app/core/constants/chart.data';
-import { EChartsOption, ECharts } from 'echarts';
-import { NgFor, NgIf } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
-import { NGX_ECHARTS_CONFIG, NgxEchartsModule } from 'ngx-echarts';
+import { ChartModule } from 'primeng/chart';
+import { Lesson } from 'src/app/core/api/lesson';
+import { ActivatedRoute } from '@angular/router';
+import { ChartsDataService } from 'src/app/core/services/charts-data.service';
+import { LessonProblemSolve } from 'src/app/core/api/lesson-problem-solve';
 
 @Component({
   selector: 'app-lesson-problem-solve-chart',
   templateUrl: './lesson-problem-solve-chart.page.html',
   styleUrls: ['./lesson-problem-solve-chart.page.scss'],
   standalone: true,
-  imports: [
-    NgIf,
-    NgFor,
-    RouterLink,
-    IonicModule,
-    ReactiveFormsModule,
-    NgxEchartsModule,
-  ],
-  providers: [
-    {
-      provide: NGX_ECHARTS_CONFIG,
-      useFactory: () => ({ echarts: () => import('echarts') }),
-    },
-  ],
+  imports: [IonicModule, CommonModule, ReactiveFormsModule, ChartModule],
 })
-export class LessonProblemSolveChartPage {
-  lineChartOptions: EChartsOption = {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{c}',
-    },
-    xAxis: {
-      type: 'category',
-      axisLine: {
-        show: false,
-      },
-      axisTick: {
-        show: false,
-      },
-      data: CHART_LABELS,
-      splitLine: {
-        show: false,
-      },
-    },
-    yAxis: {
-      type: 'value',
-      axisTick: {
-        show: false,
-      },
-      splitNumber: 4,
-      axisLine: {
-        show: false,
-      },
-    },
-    grid: {
-      left: '10%',
-      right: '0%',
-    },
-    series: [
-      {
-        id: 'earnings',
-        name: 'Earnings',
-        type: 'line',
-      },
-      {
-        id: 'revenue',
-        name: 'Revenue',
-        type: 'line',
-        lineStyle: {
-          color: '#CCC',
-          type: 'dashed',
-        },
-      },
-    ],
-  };
+export class LessonProblemSolveChartPage implements OnInit {
+  chartData: any;
 
-  chartControlsGroup: FormGroup;
+  lessonProblemSolveDatas: any;
 
-  echartsInstance!: ECharts;
+  options: any;
 
-  constructor(public chartsDataService: ChartsDataService) {
-    this.chartControlsGroup = new FormGroup({
-      earningsData: new FormControl(true, Validators.required),
-      revenueData: new FormControl(true, Validators.required),
-      smoothLine: new FormControl(true, Validators.required),
-      dataPeriod: new FormControl('thisWeek', Validators.required),
+  lessons: Lesson[] = [];
+  selectedLessons: Lesson[] = [];
+
+  timePeriods: string[] = [];
+
+  timePeriodLabels: { [key: string]: string[] } = {};
+
+  form: FormGroup;
+
+  documentStyle = getComputedStyle(document.documentElement);
+
+  constructor(
+    private route: ActivatedRoute,
+    private formBuilder: FormBuilder,
+    private chartDataService: ChartsDataService
+  ) {
+    this.timePeriods = ['This Week', 'This Month', 'This Year'];
+    this.timePeriodLabels = {
+      'This Week': [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ],
+      'This Month': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+      'This Year': [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'Septemper',
+        'October',
+        'November',
+        'December',
+      ],
+    };
+    this.form = this.formBuilder.group({
+      lessons: [[]],
+      timePeriod: ['This Year'],
+    });
+  }
+
+  ngOnInit() {
+    this.lessons = this.route.snapshot.data['lessons'];
+    this.form.controls['lessons'].setValue(this.lessons.map((l) => l.id));
+
+    this.lessonProblemSolveDatas = this.route.snapshot.data[
+      'lessonProblemSolves'
+    ] as LessonProblemSolve[];
+
+    this.initializeChart();
+    this.updateChartData();
+
+    this.form.controls['lessons'].valueChanges.subscribe(() => {
+      this.updateChartData();
     });
 
-    // ? Get initial value to set the curve style
-    const isSmooth = this.chartControlsGroup.get('smoothLine')?.value;
+    this.form.controls['timePeriod'].valueChanges.subscribe(() => {
+      this.updateChartData();
+    });
+  }
 
-    (this.lineChartOptions.series as any)[0].smooth = isSmooth;
-    (this.lineChartOptions.series as any)[1].smooth = isSmooth;
+  private initializeChart() {
+    const textColor = this.documentStyle.getPropertyValue('--text-color');
+    const textColorSecondary = this.documentStyle.getPropertyValue(
+      '--text-color-secondary'
+    );
+    const surfaceBorder =
+      this.documentStyle.getPropertyValue('--surface-border');
 
-    // ? Check what series we should show in the chart
-    const showEarnings = this.chartControlsGroup.get('earningsData')?.value;
-    const showRevenue = this.chartControlsGroup.get('revenueData')?.value;
-    // ? Check what period of data we should show in the chart
-    const dataPeriod = this.chartControlsGroup.get('dataPeriod')?.value;
+    this.chartData = {
+      labels: [...this.timePeriodLabels['This Year']],
+      datasets: [
+        {
+          label: 'Correct Answers',
+          data: [65, 59, 80, 81, 56, 55, 40],
+          fill: false,
+          tension: 0.4,
+          borderColor: this.documentStyle.getPropertyValue('--blue-500'),
+        },
+        {
+          label: 'Wrong Answers',
+          data: [28, 48, 40, 19, 86, 27, 90],
+          fill: false,
+          borderDash: [5, 5],
+          tension: 0.4,
+          borderColor: this.documentStyle.getPropertyValue('--teal-500'),
+        },
+        {
+          label: 'Empty Answers',
+          data: [12, 51, 62, 33, 21, 62, 45],
+          fill: true,
+          borderColor: this.documentStyle.getPropertyValue('--orange-500'),
+          tension: 0.4,
+          backgroundColor: 'rgba(255,167,38,0.2)',
+        },
+        {
+          label: 'Total Time',
+          data: [12, 51, 62, 33, 21, 62, 45],
+          fill: true,
+          borderColor: this.documentStyle.getPropertyValue('--orange-500'),
+          tension: 0.4,
+          backgroundColor: 'rgba(255,167,38,0.2)',
+        },
+      ],
+    };
 
-    const dataCategory =
-      showEarnings & showRevenue
-        ? 'all'
-        : showEarnings
-        ? 'earnings'
-        : showRevenue
-        ? 'revenue'
-        : null;
+    this.options = {
+      maintainAspectRatio: false,
+      aspectRatio: 0.6,
+      plugins: {
+        legend: {
+          labels: {
+            color: textColor,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: textColorSecondary,
+          },
+          grid: {
+            color: surfaceBorder,
+          },
+        },
+        y: {
+          ticks: {
+            color: textColorSecondary,
+          },
+          grid: {
+            color: surfaceBorder,
+          },
+        },
+      },
+    };
+  }
 
-    if (dataCategory !== null && dataPeriod) {
-      const chartData = this.chartsDataService.getData(
-        dataPeriod,
-        dataCategory,
-        'ngx-echarts'
-      );
-
-      (this.lineChartOptions.series as any)[0].data = chartData[0].data;
-      (this.lineChartOptions.series as any)[1].data = chartData[1].data;
+  private updateChartData() {
+    const selectedTimePeriod = this.form.controls['timePeriod'].value;
+    const selectedLessons = this.form.controls['lessons'].value;
+    // When value changes, update the chart datas
+    let filteredData = [];
+    const lspData = this.lessonProblemSolveDatas.filter((lsp: any) =>
+      selectedLessons.includes(lsp.lesson_id)
+    );
+    if (selectedTimePeriod === 'This Week') {
+      filteredData = this.chartDataService.getWeeklyData(lspData);
+    } else if (selectedTimePeriod === 'This Month') {
+      filteredData = this.chartDataService.getMonthlyData(lspData);
+    } else {
+      filteredData = this.chartDataService.getYearlyData(lspData);
     }
 
-    // Start listening for changes in the form
-    this.onChanges();
-  }
+    const isPeriodYear = selectedTimePeriod === 'This Year';
 
-  // Get Echarts instance: https://github.com/xieziyu/ngx-echarts#echarts-instance
-  onChartInit(chart: ECharts) {
-    this.echartsInstance = chart;
-  }
+    // When value changes, update the chart labels
+    const correctAnswers = {
+      label: 'Correct Answers',
+      data: this.chartDataService.getDataFor(
+        filteredData,
+        'correct_answer',
+        isPeriodYear
+      ),
+      fill: false,
+      tension: 0.4,
+      borderColor: this.documentStyle.getPropertyValue('--blue-500'),
+    };
+    const wrongAnswers = {
+      label: 'Wrong Answers',
+      data: this.chartDataService.getDataFor(
+        filteredData,
+        'wrong_answer',
+        isPeriodYear
+      ),
+      fill: false,
+      borderDash: [5, 5],
+      tension: 0.4,
+      borderColor: this.documentStyle.getPropertyValue('--teal-500'),
+    };
+    const emptyAnswers = {
+      label: 'Empty Answers',
+      data: this.chartDataService.getDataFor(
+        filteredData,
+        'empty_answer',
+        isPeriodYear
+      ),
+      fill: false,
+      borderColor: this.documentStyle.getPropertyValue('--orange-500'),
+      tension: 0.4,
+      backgroundColor: 'rgba(255,167,38,0.2)',
+    };
+    const totalTimes = {
+      label: 'Total Time',
+      data: this.chartDataService.getDataFor(
+        filteredData,
+        'total_time',
+        isPeriodYear
+      ),
+      fill: true,
+      borderColor: this.documentStyle.getPropertyValue('--red-500'),
+      tension: 0.4,
+      backgroundColor: 'rgba(104,167,25,0.2)',
+    };
+    const labels = this.timePeriodLabels[selectedTimePeriod];
 
-  onChanges(): void {
-    this.chartControlsGroup
-      .get('smoothLine')
-      ?.valueChanges.subscribe((isSmooth) => {
-        console.log('smoothLine', isSmooth);
-
-        this.echartsInstance?.setOption({
-          series: [
-            {
-              id: 'earnings',
-              smooth: isSmooth,
-            },
-            {
-              id: 'revenue',
-              smooth: isSmooth,
-            },
-          ],
-        });
-      });
-
-    this.chartControlsGroup
-      .get('dataPeriod')
-      ?.valueChanges.subscribe((dataPeriod) => {
-        console.log('dataPeriod', dataPeriod);
-
-        // ? Check what series we should show in the chart
-        const showEarnings = this.chartControlsGroup.get('earningsData')?.value;
-        const showRevenue = this.chartControlsGroup.get('revenueData')?.value;
-
-        const dataCategory =
-          showEarnings & showRevenue
-            ? 'all'
-            : showEarnings
-            ? 'earnings'
-            : showRevenue
-            ? 'revenue'
-            : null;
-
-        if (dataCategory !== null) {
-          const chartData = this.chartsDataService.getData(
-            dataPeriod,
-            dataCategory,
-            'ngx-echarts'
-          );
-
-          switch (dataCategory) {
-            case 'all':
-              this.echartsInstance?.setOption({
-                series: [
-                  {
-                    id: 'earnings',
-                    data: chartData[0].data,
-                  },
-                  {
-                    id: 'revenue',
-                    data: chartData[1].data,
-                  },
-                ],
-              });
-
-              break;
-            case 'earnings':
-              this.echartsInstance?.setOption({
-                series: [
-                  {
-                    id: 'earnings',
-                    data: chartData.data,
-                  },
-                ],
-              });
-
-              break;
-            case 'revenue':
-              this.echartsInstance?.setOption({
-                series: [
-                  {
-                    id: 'revenue',
-                    data: chartData.data,
-                  },
-                ],
-              });
-
-              break;
-          }
-        }
-      });
-
-    // See: https://github.com/apache/echarts/issues/15585
-    // See: https://echarts.apache.org/en/api.html#echartsInstance.setOption
-    // Live data, we can also use: https://echarts.apache.org/en/api.html#echartsInstance.appendData
-    this.chartControlsGroup
-      .get('earningsData')
-      ?.valueChanges.subscribe((toggleEarningsData) => {
-        console.log('toggleEarningsData', toggleEarningsData);
-
-        // ? Check what period of data we should show in the chart
-        const dataPeriod = this.chartControlsGroup.get('dataPeriod')?.value;
-
-        const earningsData = toggleEarningsData
-          ? this.chartsDataService.getData(
-              dataPeriod,
-              'earnings',
-              'ngx-echarts'
-            ).data
-          : [];
-
-        this.echartsInstance.setOption({
-          series: [
-            {
-              id: 'earnings',
-              data: earningsData,
-            },
-          ],
-        });
-      });
-
-    this.chartControlsGroup
-      .get('revenueData')
-      ?.valueChanges.subscribe((toggleRevenueData) => {
-        console.log('toggleRevenueData', toggleRevenueData);
-
-        // ? Check what period of data we should show in the chart
-        const dataPeriod = this.chartControlsGroup.get('dataPeriod')?.value;
-
-        const revenueData = toggleRevenueData
-          ? this.chartsDataService.getData(dataPeriod, 'revenue', 'ngx-echarts')
-              .data
-          : [];
-
-        this.echartsInstance.setOption({
-          series: [
-            {
-              id: 'revenue',
-              data: revenueData,
-            },
-          ],
-        });
-      });
+    const datasets = [correctAnswers, wrongAnswers, emptyAnswers, totalTimes];
+    this.chartData = {
+      ...this.chartData,
+      labels,
+      datasets,
+    };
+    console.log(this.chartData);
   }
 }

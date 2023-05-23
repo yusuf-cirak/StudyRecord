@@ -138,6 +138,10 @@ export const routes: Routes = [
   },
   {
     path: 'lesson-problem-solve-chart',
+    resolve: {
+      lessons: LessonListResolver,
+      lessonProblemSolves: LessonProblemSolveListResolver,
+    },
     loadComponent: () =>
       import(
         './core/pages/lesson-problem-solve/lesson-problem-solve-chart/lesson-problem-solve-chart.page'

@@ -7,17 +7,23 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div
-    class="add-button-container"
-    [routerLink]="['','lesson-problem-solve-show']"
-  >
-    <ion-button fill="outline">
+  <div class="lsp-buttons">
+    <ion-button fill="outline" [routerLink]="['','lesson-problem-solve-chart']">
+      <div class="button-inner-container">
+        <ion-icon
+          name="bar-chart-outline"
+          style="width: 30px; height: 30px"
+        ></ion-icon>
+        <span>Chart</span>
+      </div></ion-button
+    >
+    <ion-button fill="outline" [routerLink]="['','lesson-problem-solve-show']">
       <div class="button-inner-container">
         <ion-icon
           name="add-outline"
           style="width: 30px; height: 30px"
         ></ion-icon>
-        <span>New Lesson Problem Solve</span>
+        <span>New Problem Solve</span>
       </div></ion-button
     >
   </div>
